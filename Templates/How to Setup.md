@@ -21,55 +21,113 @@ Step-by-step to wire this onto a project. For the *why* and the manual/adapt pat
 
 Assumes a **clean PC** — nothing installed yet, no vault present. Do this once, in order (later items copy files out of the vault, so the vault has to come first). Versions verified on the reference machine in parentheses.
 
-> [!info] Platform: macOS / Linux — on Windows, use **WSL2**
-> This setup is Unix-based: the scaffolder is a bash script (uses `awk`, `mktemp`, symlinks, `chmod`, `~/.local/bin`), and the git hooks assume Unix paths. macOS and Linux run it as-is. **On Windows, run everything inside WSL2 (Ubuntu)** — install Claude Code, graphify, and the vault *inside* the WSL distro and it all works unchanged (use the `curl … astral.sh/uv` installer below, not `brew`). Native (non-WSL) Windows is **not** supported without porting the script to PowerShell and remapping paths.
+> [!info] Platform notes
+> **macOS / Linux:** all steps run as written in Terminal.
+> **Windows (native):** use PowerShell 7+ for all commands. The scaffolder script (Step 6) is bash-only — Windows users skip it and use the Git Bash or manual fallback noted in Phase 1 Step 1. Git hooks run fine on Windows because Git for Windows bundles bash.
 
 **1. Claude Code** — the AI coding assistant this whole system runs inside. Install it from https://claude.ai/code (Mac/Windows desktop app) or via `npm install -g @anthropic-ai/claude-code`. Every `/graphify`, `/obsidian-audit`, and Claude skill invocation happens inside a Claude Code session.
+
+> **All platforms**
 ```bash
 claude --version   # confirm it's installed and on PATH
 ```
 
 **2. Python 3.10+ and `uv`** (uv installs and manages graphify).
+
+> **macOS**
 ```bash
-# macOS:
 brew install uv
-# Linux / WSL2 (Ubuntu):
+```
+
+> **Linux**
+```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+> **Windows (PowerShell)**
+```powershell
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+> **All platforms** — verify install
+```bash
 uv --version             # (verified: uv 0.11.21, Python 3.13)
 ```
 
 **3. graphify** — the graph engine. PyPI package is `graphifyy` (double-y); the CLI is `graphify`.
+
+> **All platforms**
 ```bash
-uv tool install graphifyy     # installs into ~/.local/share/uv/tools/, CLI symlinked to ~/.local/bin/graphify
+uv tool install graphifyy
 graphify --help               # confirm it's on PATH  (verified: graphify 0.8.39)
 ```
-Ensure `~/.local/bin` is on your `$PATH`. To upgrade later: `uv tool upgrade graphifyy`.
 
-**4. Set `CLAUDE_VAULT`** — the vault path used by all scripts, skills, and setup commands. Add this to your `~/.zshrc` (or `~/.bashrc` on Linux/WSL2), then reload:
+PATH note: uv adds the tools bin to PATH automatically. If `graphify` isn't found, restart your terminal. Manual fix:
+- **macOS / Linux:** ensure `~/.local/bin` is in `$PATH`
+- **Windows:** ensure `%APPDATA%\uv\bin` is in your `Path` environment variable
+
+To upgrade later: `uv tool upgrade graphifyy`.
+
+**4. Set `CLAUDE_VAULT`** — the vault path used by all scripts, skills, and setup commands. Set it as a persistent environment variable, then verify:
+
+> **macOS** (default shell: zsh)
 ```bash
-# Set this to wherever your Obsidian vault lives
 echo 'export CLAUDE_VAULT="$HOME/Obsidian/Claude"' >> ~/.zshrc
 source ~/.zshrc
-echo $CLAUDE_VAULT   # confirm it's set
+echo $CLAUDE_VAULT
 ```
-> Change the value if your vault lives elsewhere (e.g. `~/Library/Mobile Documents/.../Claude` for iCloud). Everything below uses `$CLAUDE_VAULT` — no hardcoded paths.
+
+> **Linux** (default shell: bash)
+```bash
+echo 'export CLAUDE_VAULT="$HOME/Obsidian/Claude"' >> ~/.bashrc
+source ~/.bashrc
+echo $CLAUDE_VAULT
+```
+
+> **Windows (PowerShell)** — sets a permanent user-level env var; restart terminal after
+```powershell
+[System.Environment]::SetEnvironmentVariable("CLAUDE_VAULT", "$HOME\Obsidian\Claude", "User")
+# Restart PowerShell, then verify:
+$env:CLAUDE_VAULT
+```
+
+> Change the value if your vault lives elsewhere (e.g. `~/Library/Mobile Documents/.../Claude` for iCloud). Everything below uses `$CLAUDE_VAULT` / `$env:CLAUDE_VAULT` — no hardcoded paths.
 
 **5. Obsidian + the vault** (do this before items 6 & 9 — they copy bundled files out of it). Install the Obsidian app (https://obsidian.md), then sync/restore your vault to the path you set in `$CLAUDE_VAULT`, then "Open folder as vault". Claude reads/writes the vault over the **filesystem** — no Obsidian plugin required.
+
+> **macOS / Linux**
 ```bash
 ls "$CLAUDE_VAULT"   # confirm vault is present (should show FORMAT.md, Templates/, etc.)
 ```
 
+> **Windows (PowerShell)**
+```powershell
+ls $env:CLAUDE_VAULT   # confirm vault is present
+```
+
 **6. `graphify-obsidian-init`** — the one-command scaffolder (used in Phase 1). It's a **personal helper script**, not part of graphify, and it's bundled in the vault. Copy it to your local bin and make it executable:
+
+> **macOS / Linux**
 ```bash
 cp "$CLAUDE_VAULT/Templates/bin/graphify-obsidian-init" ~/.local/bin/
 chmod +x ~/.local/bin/graphify-obsidian-init
 graphify-obsidian-init --help   # confirm it runs and is on PATH
 ```
+
+> **Windows (native):** this script is bash-only and cannot be installed via PowerShell. Options:
+> - Run it once via **Git Bash** (comes with Git for Windows): open Git Bash and run the `cp` + `chmod` commands above as-is.
+> - Or **skip this step** entirely — see the Windows fallback in Phase 1 Step 1.
+
 > If the script is ever missing, the manual steps in [[graphify-obsidian-setup]] reproduce exactly what it does — you can run those instead (see Phase 2's fallback note).
 
 **7. Extraction backend.** graphify's semantic pass (docs/PDFs) uses **Claude subagents by default** — free within your session. If `GEMINI_API_KEY` / `GOOGLE_API_KEY` is set, it routes through Gemini instead; **unset it** to use Claude (or `uv tool install 'graphifyy[gemini]'` if you deliberately want Gemini). The code (AST) pass is always local and 0-token regardless.
 
-**8. Global graph-first directive.** Graph-first behaviour is provided **globally**, not per-project — so you never paste it into individual repos. `~/.claude/CLAUDE.md` is a plain text file (create it if it doesn't exist). Open it in any editor and add this block:
+**8. Global graph-first directive.** Graph-first behaviour is provided **globally**, not per-project — so you never paste it into individual repos. `CLAUDE.md` is a plain text file (create it if it doesn't exist). Open it in any editor and add this block:
+
+| Platform | Path |
+|---|---|
+| macOS / Linux | `~/.claude/CLAUDE.md` |
+| Windows | `%USERPROFILE%\.claude\CLAUDE.md` |
 
 ```markdown
 # Knowledge Graph (graph-first — only when the repo has one)
@@ -83,6 +141,8 @@ Read raw source only once the graph has pointed you at the right files. If there
 This fires **only** when a repo actually has a `graphify-out/`, so it's harmless in non-graphify projects.
 
 **9. Skills (`/obsidian-audit`, `/obsidian-init`, `/graphify`, `obsidian-format-update`, `obsidian-migrate-projects`).** These are the slash commands and reference skills that power capture/recall, graph-building, and vault maintenance inside Claude Code. All are bundled in the vault — copy them to `~/.claude/skills/`:
+
+> **macOS / Linux**
 ```bash
 mkdir -p ~/.claude/skills
 cp -r "$CLAUDE_VAULT/Templates/skills/obsidian-audit" ~/.claude/skills/
@@ -92,7 +152,17 @@ cp -r "$CLAUDE_VAULT/Templates/skills/obsidian-format-update" ~/.claude/skills/
 cp -r "$CLAUDE_VAULT/Templates/skills/obsidian-migrate-projects" ~/.claude/skills/
 ```
 
-Then open `~/.claude/CLAUDE.md` and add these two trigger blocks (paste them after the graph-first block from Step 7):
+> **Windows (PowerShell)**
+```powershell
+New-Item -ItemType Directory -Force "$HOME\.claude\skills"
+Copy-Item -Recurse "$env:CLAUDE_VAULT\Templates\skills\obsidian-audit" "$HOME\.claude\skills\"
+Copy-Item -Recurse "$env:CLAUDE_VAULT\Templates\skills\obsidian-init" "$HOME\.claude\skills\"
+Copy-Item -Recurse "$env:CLAUDE_VAULT\Templates\skills\graphify" "$HOME\.claude\skills\"
+Copy-Item -Recurse "$env:CLAUDE_VAULT\Templates\skills\obsidian-format-update" "$HOME\.claude\skills\"
+Copy-Item -Recurse "$env:CLAUDE_VAULT\Templates\skills\obsidian-migrate-projects" "$HOME\.claude\skills\"
+```
+
+Then open your `CLAUDE.md` (path in Step 8) and add these two trigger blocks (paste them after the graph-first block from Step 8):
 
 ```markdown
 # graphify
@@ -120,6 +190,7 @@ Plain terminal work; no Claude session, no tokens. Get the project fully wired b
 
 ### Step 1. Scaffold the vault + hooks
 
+> **macOS / Linux**
 ```bash
 cd <REPO>
 graphify-obsidian-init <PROJECT>
@@ -128,6 +199,10 @@ graphify-obsidian-init <PROJECT>
 cd ~/Desktop/Projects/finance-ai
 graphify-obsidian-init finance-ai
 ```
+
+> **Windows (native) — two options (pick one):**
+> - **Git Bash:** open Git Bash (comes with Git for Windows), `cd` to `<REPO>`, and run the same commands above. Git Bash has bash + the script will work.
+> - **Fallback (PowerShell):** skip the script entirely and let Claude scaffold it — in Phase 2, hand Claude the AI guide (see fallback note in Step 3).
 
 Scaffolds the vault, installs the git hooks (**post-commit** + **post-checkout** — both 0-token rebuilds),
 and patches post-commit to export into Obsidian. It creates the project **hub** with both version fields
@@ -143,8 +218,14 @@ see [[VERSIONS]]), and a `knowledge/git-hook-graphify.md` gotcha note. Look for:
 
 ### Step 2. Gitignore the engine folder + tune the corpus
 
+> **macOS / Linux**
 ```bash
 grep -qxF 'graphify-out/' .gitignore || { echo '' >> .gitignore; echo 'graphify-out/' >> .gitignore; }
+```
+
+> **Windows (PowerShell)**
+```powershell
+if (-not (Select-String -Path .gitignore -Pattern 'graphify-out/' -Quiet 2>$null)) { Add-Content .gitignore "`ngraphify-out/" }
 ```
 
 `graphify-out/` is a build artifact (graph.json + cache) — keep it out of git.
@@ -166,33 +247,31 @@ graphify-out/
 
 Now open Claude Code in `<REPO>` (run `claude` from the repo directory, or open the folder in the Claude Code desktop app). Phase 1 did all the deterministic wiring for free; the AI is needed only for the semantic graph build.
 
-### Step 3. Build the graph
+### Step 3. Open Claude Code
 
-> [!note] Use Claude subagents, not Gemini
-> If `GEMINI_API_KEY` / `GOOGLE_API_KEY` is set, graphify routes semantic extraction through Gemini. Unset it first to use Claude subagents instead.
+Open Claude Code in `<REPO>` (run `claude` from the repo directory, or open the folder in the Claude Code desktop app). The graph build and vault population happen in Step 5 when you hand Claude the AI guide — nothing to run here yet.
 
-Inside the Claude Code session, type:
-
-```
-/graphify
-```
-
-AST extraction is free; semantic extraction of doc files (subagents) + the first Obsidian export are the token cost. One time; cached after — later commits rebuild for 0 tokens via the hook.
-
-> **No per-project CLAUDE.md step.** Graph-first behaviour comes from the global `~/.claude/CLAUDE.md`
+> **No per-project CLAUDE.md step.** Graph-first behaviour comes from the global `CLAUDE.md`
 > directive (see *Machine setup*), which auto-applies to any repo that has a `graphify-out/`. Nothing to paste here.
 
-> **Fallback (only if Phase 1's script wasn't available):** you can have Claude do the scaffolding too by handing it the AI guide — *"Read `$CLAUDE_VAULT/Templates/graphify-obsidian-setup.md` and follow it to wire up this project (`<PROJECT>`); stamp versions from `$CLAUDE_VAULT/VERSIONS.md`."* This costs **more tokens** (the AI redoes deterministic work the script does for free), so prefer the Phase 1 script and use this only when it's missing.
+> [!note] Use Claude subagents, not Gemini
+> If `GEMINI_API_KEY` / `GOOGLE_API_KEY` is set, graphify routes semantic extraction through Gemini. Unset it first to use Claude subagents instead (Step 5 triggers the build).
 
 ### Step 4. Verify
 
-Make a trivial commit, then:
+Make a trivial commit, then check the hook log (the hook runs in the background — give it a few seconds):
 
+> **macOS / Linux**
 ```bash
 tail ~/.cache/graphify-rebuild.log
 ```
 
-Expect both lines to appear (the hook runs in the background — give it a few seconds after the commit returns):
+> **Windows (PowerShell)**
+```powershell
+Get-Content "$HOME\.cache\graphify-rebuild.log" -Tail 10
+```
+
+Expect both lines to appear:
 ```
 [graphify hook] N file(s) changed - rebuilding graph...
 [graphify hook] Obsidian vault updated -> $CLAUDE_VAULT/Projects/<PROJECT>/graphify-auto/
@@ -206,13 +285,15 @@ Expect both lines to appear (the hook runs in the background — give it a few s
 
 ### Step 5. Run the AI build + initial vault scan
 
-Open Claude Code in `<REPO>` and give it the AI guide:
+Open Claude Code in `<REPO>` and give it the AI guide. Because Phase 1's scaffolder already created the vault, hub, and hook, tell Claude to skip those steps:
 
 ```
-Open obsidian://open?vault=Claude&file=Templates%2Fgraphify-obsidian-setup and follow it to wire up this project (<PROJECT>).
+Read $CLAUDE_VAULT/Templates/graphify-obsidian-setup.md. The scaffolder already ran (vault folders, hub, and hook are done). Start at Step 2 (build graph), then continue from Step 5 onward. Project name: <PROJECT>.
 ```
 
-This is the only token-spending step. It builds the graph (`/graphify`) and populates the vault (`/obsidian-init`).
+> **Windows / scaffolder skipped:** if Phase 1 used the fallback instead, omit the "scaffolder already ran" sentence — Claude will follow all steps from Step 1.
+
+Claude will build the graph, add the hub Graph section, create the gotcha note, and run `/obsidian-init` to populate the vault with initial specs, knowledge, and reference notes.
 
 ---
 

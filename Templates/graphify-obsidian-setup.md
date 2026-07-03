@@ -36,7 +36,25 @@ FORMAT.md alone is not enough: it describes the vault, not the graphify pipeline
 
 ## Quick start
 
-For the normal case, follow [[How to Setup]] — one command (`graphify-obsidian-init <PROJECT>`) plus `/graphify`. The sections below are the **reference** that script automates: read them to understand the design, to adapt for a non-standard layout, or when the script reports it couldn't patch the hook.
+### Skip map — what the scaffolder already did
+
+If `graphify-obsidian-init` ran successfully in Phase 1 of [[How to Setup]], several steps below are already done. Use this table to know where to start:
+
+| Step | Skip if scaffolder ran? | Why |
+|---|---|---|
+| Output Locations → `.graphifyignore` | **Skip** | Phase 1 Step 2 already created it |
+| Step 1 — vault folders + hub | **Skip** | Script scaffolded folders and created the hub |
+| Step 2 — build graph (`/graphify`) | **Run** | Always needed — first graph build |
+| Step 3 — `graphify hook install` + export | **Skip** | Script installed and wired the hook |
+| Step 4 — patch post-commit hook | **Skip** | Script patched it |
+| Step 5 — hub Graph section + gotcha note | **Run** | Not done by script |
+| Step 5b — `/obsidian-init` vault scan | **Run** | Not done by script |
+| Step 6 — verify | **Run** (partial) | Skip the log check — Phase 2 Step 4 of [[How to Setup]] already covers it |
+
+**If scaffolder ran:** start at **Step 2**, then jump to **Step 5 → 5b → Step 6** (skip log check).
+**If scaffolder was skipped (Windows fallback or script unavailable):** follow all steps in order.
+
+> The sections below are the reference that `graphify-obsidian-init` automates. Read them to understand the design, adapt for non-standard layouts, or when the script couldn't patch the hook.
 
 ---
 
@@ -52,12 +70,8 @@ Graphify produces two kinds of output. They live in **different places on purpos
 | `GRAPH_REPORT.md`, `graph.html` | Human-readable report + interactive viz | Repo root (optionally copied to vault — see below) |
 | `graphify-auto/` (one `.md` per code entity) | Browsable graph nodes for Obsidian | **`<VAULT>/graphify-auto/`** |
 
-> [!warning] Keep `graphify-out/` at the repo root — do not relocate it into the vault
-> Two hard dependencies break if you move it:
-> 1. `graphify query` defaults to `graphify-out/graph.json` **relative to the current working directory** (the repo). Relocating forces `--graph <path>` on every command.
-> 2. The post-commit hook's incremental rebuild (`_rebuild_code`) writes back to `graphify-out/` beside the scan root and reuses the cache there. Redirecting it dumps binary cache + per-run state into Obsidian, cluttering the vault and slowing its indexer.
->
-> The design is intentional: **engine state at repo root, human-browsable markdown export in Obsidian.** Only `graphify-auto/` (the `.md` nodes) belongs in the vault.
+> [!warning] Do not move `graphify-out/` into the vault
+> `graphify query` resolves `graph.json` relative to the repo root, and the hook writes incremental cache there. Only `graphify-auto/` (the `.md` export) belongs in Obsidian.
 
 **Gitignore the engine folder** (it's a regenerated build artifact; the finance-ai target does this) — but do **not** move it:
 
@@ -178,7 +192,13 @@ Create `<VAULT>/knowledge/git-hook-graphify.md` (tag `gotcha` + `tooling`) recor
 
 ## Step 5b — Populate the vault from the codebase
 
-Run `/obsidian-init` — the one-time codebase scan skill. It reads entry points, services, routes, models, utilities, and config, then proposes notes for `specs/`, `knowledge/`, `reference/`, and fills the hub's placeholder fields. Present the full candidate list to the user for approval before writing anything.
+In the Claude Code session, type:
+
+```
+/obsidian-init
+```
+
+Claude will scan entry points, services, routes, models, utilities, and config, then present the full candidate note list for `specs/`, `knowledge/`, and `reference/` for approval before writing anything. It also fills the hub's placeholder fields (summary, stack, Key Paths table).
 
 > [!note] This is not `/obsidian-audit`
 > `/obsidian-audit` is for capturing knowledge from a work session. `/obsidian-init` is for the one-time initial vault population from code. Use each only in its intended context.
@@ -203,13 +223,24 @@ Also fills the hub's placeholder fields:
 
 ## Step 6 — Verify
 
+> **macOS / Linux**
 ```bash
 ls <VAULT>/                              # specs decisions knowledge reference plans investigations graphify-auto
 ls <VAULT>/graphify-auto/ | head -3      # one .md per code entity
-cat <REPO>/.graphifyignore               # corpus tuning present (Step "Output Locations")
-grep -q 'Knowledge Graph' ~/.claude/CLAUDE.md && echo "global graph-first directive present ✓"   # machine-level, not per-repo
+cat <REPO>/.graphifyignore               # corpus tuning present
+grep -q 'Knowledge Graph' ~/.claude/CLAUDE.md && echo "global graph-first directive present ✓"
 # make a trivial commit, then:
 tail ~/.cache/graphify-rebuild.log       # should show rebuild + "Obsidian vault updated"
+```
+
+> **Windows (PowerShell)**
+```powershell
+ls $env:CLAUDE_VAULT\Projects\<PROJECT>\                    # specs decisions knowledge reference plans investigations graphify-auto
+ls $env:CLAUDE_VAULT\Projects\<PROJECT>\graphify-auto\ | Select-Object -First 3
+Get-Content <REPO>\.graphifyignore
+if (Select-String -Path "$HOME\.claude\CLAUDE.md" -Pattern 'Knowledge Graph' -Quiet) { "global graph-first directive present ✓" }
+# make a trivial commit, then:
+Get-Content "$HOME\.cache\graphify-rebuild.log" -Tail 10   # should show rebuild + "Obsidian vault updated"
 ```
 
 ---

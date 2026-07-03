@@ -5,9 +5,9 @@ tags:
 
 # Claude Obsidian Vault
 
-An Obsidian vault for persisting Claude Code project knowledge — decisions, investigations, API quirks, and patterns — with Graphify knowledge graphs for semantic search and impact analysis.
+An Obsidian vault that gives Claude Code agents persistent memory across sessions. Stores project knowledge — decisions, investigations, API quirks, and patterns — so agents recall context instead of re-deriving it, keeping token usage low. Includes Graphify knowledge graphs for semantic search and impact analysis.
 
-Each project gets its own folder with typed notes (specs, decisions, knowledge, investigations). Claude reads only what it needs per session, keeping token usage low. At the end of a session, `/obsidian-audit` captures what's worth keeping as atomic notes linked from the project hub.
+Each project gets its own folder with typed notes (specs, decisions, knowledge, investigations). Claude reads only what it needs per session. At the end of a session, `/obsidian-audit` captures what's worth keeping as atomic notes linked from the project hub.
 
 ## Getting Started
 
@@ -55,6 +55,18 @@ Claude will synthesize what's worth keeping into atomic notes and link them from
 ### 5. Use Graphify for codebase queries
 
 If a project has a `graphify-out/` directory, Claude will consult the knowledge graph before reading files — for architecture questions, impact analysis, and locating where something happens.
+
+## Skills
+
+Five slash commands are bundled with this vault. Install them once via `Templates/How to Setup.md` → Machine setup Step 9; they live in `~/.claude/skills/`.
+
+| Skill | Trigger | What it does |
+|---|---|---|
+| `graphify` | `/graphify` | Builds or rebuilds the semantic knowledge graph for the current repo |
+| `obsidian-audit` | `/obsidian-audit` | Persists session knowledge as atomic notes in the vault; also handles recall and investigation lookup before debugging |
+| `obsidian-init` | `/obsidian-init` | One-time codebase scan after initial setup — populates `specs/`, `knowledge/`, `reference/`, and fills hub placeholders |
+| `obsidian-format-update` | invoke by name | Guides `FORMAT.md` changes — every file to update, version-bumping protocol, per-project migration |
+| `obsidian-migrate-projects` | invoke by name | Migrates existing projects after a `FORMAT.md` or setup version bump |
 
 ## Vault Structure
 
