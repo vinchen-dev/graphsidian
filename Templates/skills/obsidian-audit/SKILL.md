@@ -1,42 +1,19 @@
 ---
 name: obsidian-audit
-description: Use when the user types /obsidian-audit to persist what's worth keeping from the conversation (decisions, gotchas, API quirks, patterns) as atomic notes in the Obsidian second-brain vault at $CLAUDE_VAULT/. ALSO use when recalling a project's stored knowledge from that vault — it defines the minimal-token recall protocol (read the project hub, open one note). Capture runs only on explicit /obsidian-audit invocation. ALSO use when the user asks to investigate/debug an issue or asks why something is failing: before investigating, read the project hub and check `investigations/` and `knowledge/` for a matching symptom.
+description: Use ONLY when the user types /obsidian-audit — persists what's worth keeping from the conversation (decisions, gotchas, API quirks, patterns) as atomic notes in the Obsidian second-brain vault at $CLAUDE_VAULT/. Capture runs only on explicit /obsidian-audit invocation. Do NOT load this skill for recall or pre-debug lookup — the Vault Recall protocol in ~/.claude/CLAUDE.md covers that standalone.
 ---
 
 # Obsidian Audit (Capture to Second Brain)
 
 Persist durable knowledge from this session into the second-brain vault at `$CLAUDE_VAULT/`.
 
-**FIRST: read `$CLAUDE_VAULT/FORMAT.md`** — it is the single source of truth for folder layout, frontmatter, and note structure. The templates below are a summary; FORMAT.md wins on any conflict. For the **current version numbers** to stamp into frontmatter, read `$CLAUDE_VAULT/VERSIONS.md` (the registry tracking both `format_version` ← FORMAT.md and the hub's `setup_version` ← graphify-obsidian-setup.md). Use `obsidian:obsidian-markdown` for note syntax and `obsidian:obsidian-cli` for vault operations.
-
-## Two-Layer Knowledge System
-
-This vault is one layer of a two-layer system:
-
-| Layer | What it holds | How to query |
-|-------|--------------|-------------|
-| **Vault** (`specs/`, `decisions/`, `knowledge/`, `reference/`, `plans/`, `investigations/`) | Human-curated WHY, constraints, patterns, external facts, implementation plans | Hub → one note (recall protocol below) |
-| **Graph** (`graphify-auto/`, `graphify-out/graph.json`) | Machine-extracted code structure: functions, routes, call edges, communities | `graphify query "<question>"` |
-
-Never duplicate graph content into vault notes. Never use vault recall for code-structure questions.
+**FIRST: read `$CLAUDE_VAULT/VERSIONS.md`** — it holds the current version numbers to stamp into frontmatter (`format_version` ← FORMAT.md, and the hub's `setup_version` ← graphify-obsidian-setup.md). For a routine capture, do **not** read FORMAT.md — the folder table and templates embedded below are kept in sync with it and are sufficient. Read `$CLAUDE_VAULT/FORMAT.md` (source of truth; wins on any conflict) only when: (1) creating a new project hub, (2) using the multi-part spec pattern (`specs/<topic>/`) for the first time in a project, or (3) anything conflicts with these embedded rules or you are otherwise uncertain how to structure a note.
 
 ## Core Principle
 
 The vault is **on-demand**: small atomic notes, one concept each, linked from a project hub. Capture only what is worth recalling later and would otherwise be re-derived. When in doubt, leave it out. Every note created carries the `format_version` from FORMAT.md.
 
-**Capture for cheap recall.** Notes are read back by an agent following the recall protocol (below): read the hub, open one note. So every note must be (a) in the right type folder, (b) atomic, and (c) listed in the hub with a **high-signal hook that states what the note answers** — specific enough to pick without opening anything else. Keep the hub a lean router (≤ ~400 words); put content in notes, never in the hub.
-
-## Recall Protocol (how this data is read back — agents, follow this)
-
-To recall project knowledge without burning tokens on exploration:
-1. Check `$CLAUDE_VAULT/Projects/<project>/<project>.md` exists. If not, there are no notes — stop.
-2. Read **only** the hub. Its `## Notes` router (grouped by type, each `[[note]] — hook`) tells you which single note to open.
-3. Open **one** note matching the task. For a multi-part topic, open its `…-00-index`, then the one part.
-4. Never read a folder wholesale, never read `_Index_of_*`, never grep the vault when the hub answers it.
-
-For investigate/debug/error tasks, scan hub `### Investigations` and `### Knowledge` hooks for a matching symptom before starting fresh.
-
-**Code-structure questions** ("what calls X?", "trace flow through Y?", "what services touch Z?"): skip the vault entirely — run `graphify query "<question>"` against `graphify-out/graph.json`. The vault holds WHY; the graph holds WHAT and HOW.
+**Capture for cheap recall.** Notes are read back via the recall protocol (Vault Recall in `~/.claude/CLAUDE.md`; canonical spec: FORMAT.md → *AI Agent Access*): read the hub, open one note. So every note must be (a) in the right type folder, (b) atomic, and (c) listed in the hub with a **high-signal hook that states what the note answers** — specific enough to pick without opening anything else. Keep the hub a lean router (≤ ~400 words); put content in notes, never in the hub.
 
 ## What to Save vs Skip
 
@@ -84,36 +61,7 @@ These are hard rules. Violating them corrupts the vault.
 Derive from the working directory (`~/Desktop/Projects/finance-ai` → `finance-ai`). Check whether `$CLAUDE_VAULT/Projects/<project>/` exists.
 
 ### 2. New project? Create the hub
-If the folder doesn't exist, create `Projects/<project>/<project>.md`:
-```markdown
----
-tags:
-  - project
-project: <project>
-status: active
-repo: <working-directory>
-format_version: "<current FORMAT.md version, from VERSIONS.md>"
-setup_version: "<current graphify-obsidian-setup.md version, from VERSIONS.md>"
----
-
-# <project>
-
-<One-paragraph summary. Stack line.>
-
-## Notes
-
-### Specs (`specs/`)
-### Decisions (`decisions/`)
-### Knowledge (`knowledge/`)
-### Reference (`reference/`)
-### Plans (`plans/`)
-
-## Key Paths
-
-| Path | Purpose |
-|------|---------|
-```
-(Omit a Notes subsection until it has a note. If the project uses graphify, a `### Graph (`graphify-auto/`)` section is added by the setup template — see FORMAT.md.) Then add a bullet to the Projects list in `$CLAUDE_VAULT/Home.md`:
+If the folder doesn't exist, read `$CLAUDE_VAULT/FORMAT.md` and create `Projects/<project>/<project>.md` from its **Project Hub** template (this is trigger (1) from the note at the top — the hub template is not embedded here; FORMAT.md is the source of truth). Then add a bullet to the Projects list in `$CLAUDE_VAULT/Home.md`:
 ```markdown
 - [[Projects/<project>/<project>|<project>]] — <one-line description>
 ```
@@ -136,10 +84,10 @@ Write `Projects/<project>/<folder>/<slug>.md` (slug = 2–4 kebab words):
 ```markdown
 ---
 tags:
-  - <tag>         # spec | decision | gotcha | pattern | api-quirk | bug | reference | plan
+  - <tag>         # spec | decision | gotcha | pattern | api-quirk | bug | reference | plan | investigation
 project: <project>
 date: <YYYY-MM-DD>
-format_version: "<current from FORMAT.md>"
+format_version: "<current FORMAT.md version, from VERSIONS.md>"
 ---
 
 # <Title>
@@ -161,7 +109,7 @@ project: <project>
 date: <YYYY-MM-DD>            # started
 status: open                  # open | resolved
 resolved:                     # <YYYY-MM-DD> when resolved
-format_version: "2.3.0"
+format_version: "<current FORMAT.md version, from VERSIONS.md>"
 ---
 
 # <Symptom as title — e.g. "Not allow to split, check setting" on GCash deposit>
@@ -220,7 +168,6 @@ After saving, tell the user: each note created/updated (path + one-line hook), a
 | Purpose | Path |
 |---------|------|
 | Vault map | `$CLAUDE_VAULT/Home.md` |
-| Usage manual | `$CLAUDE_VAULT/README.md` |
 | Format spec | `$CLAUDE_VAULT/FORMAT.md` |
 | Project hub | `$CLAUDE_VAULT/Projects/<project>/<project>.md` |
 | Spec note | `$CLAUDE_VAULT/Projects/<project>/specs/<slug>.md` (multi-part: `specs/<topic>/`) |
@@ -229,4 +176,3 @@ After saving, tell the user: each note created/updated (path + one-line hook), a
 | Reference note | `$CLAUDE_VAULT/Projects/<project>/reference/<slug>.md` |
 | Plan note          | `$CLAUDE_VAULT/Projects/<project>/plans/<slug>.md` |
 | Investigation note | `$CLAUDE_VAULT/Projects/<project>/investigations/<slug>.md` |
-| Graph nodes (auto) | `$CLAUDE_VAULT/Projects/<project>/graphify-auto/` |

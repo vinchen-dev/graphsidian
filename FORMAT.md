@@ -1,11 +1,11 @@
 ---
 tags:
   - meta
-format_version: "2.3.0"
-updated: 2026-07-02
+format_version: "2.4.0"
+updated: 2026-07-04
 ---
 
-# Project Format — v2.3.0
+# Project Format — v2.4.0
 
 The **single source of truth** for how every project is structured in this vault. The `/obsidian-audit` skill follows this file. Change the format here, bump the version, log it in the [Changelog](#changelog), then migrate existing projects (see [Migrating](#migrating)).
 
@@ -184,6 +184,9 @@ setup_version: "1.3.0"    # which graphify-obsidian-setup.md the project's wirin
 ### Investigations (`investigations/`)
 - [[<slug>]] — <hook>
 
+### Not covered yet
+- [[<slug>]] — <deliberately deferred domains, listed so an agent knows their absence is intentional, not an oversight>
+
 ### Graph (`graphify-auto/`)
 <!-- @generated — rebuilt by graphify post-commit hook -->
 Auto-generated code graph. Query via `graphify query "<question>"` rather than reading individual nodes.
@@ -196,7 +199,7 @@ Auto-generated code graph. Query via `graphify query "<question>"` rather than r
 | `<path>` | <purpose> |
 ```
 
-Omit a Notes subsection that has no notes yet.
+Omit a Notes subsection that has no notes yet. `### Not covered yet` is **optional**: include it only when the project deliberately defers documenting known domains (it routes to a note listing them — the list itself is content and lives in the note, not the hub).
 
 ## Atomic Note — `<type-folder>/<slug>.md`
 
@@ -222,7 +225,7 @@ See also: [[<project>]]
 
 - **Atomic.** One concept per note. If a note grows two topics, split it. *Exception: investigation notes are intentionally multi-section (see [Investigation Notes](#investigation-notes)) — do not split them.*
 - **Type-foldered.** Every note lives in the type folder matching its purpose (`specs/` `decisions/` `knowledge/` `reference/` `plans/` `investigations/`). Decisions never live inside a spec folder — link them instead. All type folders except `specs/` stay flat (no subfolders) — `investigations/` is flat like `decisions/`.
-- **Hub is a router, kept lean (≤ ~400 words).** It indexes notes; it does not hold their content. If the hub grows past budget, the content belongs in a note, not the hub.
+- **Hub is a router, kept lean (≤ ~400 words; large projects scale).** Baseline budget: ~400 words for a typical project. A project that routes many multi-part topics may add ~1 hub line per additional routed `…-00-index` (or topic subsection) beyond the baseline — more notes justify more *router lines*, never more content. The hard rule is size-independent: the hub holds hooks, never content. If a hub exceeds its budget, the excess belongs in a note (or a new `…-00-index`), not the hub.
 - **High-signal hooks.** Every hub entry's hook states what the note *answers* (`[[note]] — <the question/fact it resolves>`), specific enough that an agent picks the right note without opening others. Vague hooks ("misc notes") defeat cheap recall.
 - **Always linked.** Every note has a `See also: [[<project>]]` line and is listed under the matching hub subsection. No orphan notes.
 - **Hub first.** The hub is the only entry point — read it, follow the single relevant `[[wikilink]]`. Never bulk-load a folder. Ignore `_Index_of_*` (auto-generated).
@@ -250,6 +253,11 @@ When this file's version changes:
 4. A project is fully migrated when its hub and all notes match the current version.
 
 ## Changelog
+
+### 2.4.0 — 2026-07-04
+- **Hub budget now scales:** baseline ≤ ~400 words; hubs routing many multi-part topics may add ~1 router line per additional `…-00-index`/topic beyond the baseline. Hard rule unchanged: hooks, never content.
+- Added optional **`### Not covered yet`** hub subsection — routes to a note listing deliberately deferred domains, so an agent knows absence is intentional.
+- Additive/wording — MINOR; no structural change, migrate when convenient.
 
 ### 2.3.0 — 2026-07-02
 - Added **`investigations/` human type folder** (tag: `investigation`): permanent issue-investigation notes recording symptom → hypotheses ruled out → root cause → resolution, so a recurring issue recalls how it was fixed. `status: open | resolved`; symptom-first titles and hub hooks; `(open)` marker for unresolved. Named exception to atomic rule. Distilled lessons still go to `knowledge/`/`decisions/` and cross-link.

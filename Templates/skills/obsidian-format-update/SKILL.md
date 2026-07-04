@@ -83,10 +83,10 @@ Work top-to-bottom. Do not skip items.
 `~/.claude/skills/obsidian-audit/SKILL.md`
 `Templates/skills/obsidian-audit/SKILL.md`
 
+**Embedded templates — mandatory on every FORMAT.md change, even PATCH:** `/obsidian-audit` does not read FORMAT.md on routine captures — agents follow the templates embedded in its SKILL.md. Whenever FORMAT.md's canonical blocks change (atomic-note template incl. its tag comment, investigation template, Note Types & Folders table), re-sync the corresponding embedded blocks in obsidian-audit's SKILL.md to match exactly. (The hub template is NOT embedded there — obsidian-audit reads FORMAT.md directly when creating a hub.)
+
 For each:
-- Description: add trigger if the new type needs recall/capture behavior
-- Two-Layer table vault row: add folder to list
-- Recall Protocol: add step if recall behavior changes
+- Description: add trigger if the new type needs capture behavior (recall wiring lives in ~/.claude/CLAUDE.md → Vault Recall and FORMAT.md → AI Agent Access, not in this skill)
 - What to Save / Skip: update if capture rules differ for this type
 - Workflow §3 type table: add row + canonical template + rules
 - Workflow §4: add hub subsection guidance

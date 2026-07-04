@@ -3,13 +3,22 @@ tags:
   - meta
   - changelog
 tracks: FORMAT
-updated: 2026-07-02
+updated: 2026-07-04
 ---
 
 # FORMAT.md — changelog
 
 Version history and per-version migration checklists for [[FORMAT]]. Registry: [[VERSIONS]].
 [[FORMAT]]'s *Migrating* section points here.
+
+### 2.4.0 — 2026-07-04
+- **Hub budget scales for large projects:** baseline ≤ ~400 words; +~1 router line per additional routed `…-00-index`/topic beyond the baseline. Hard rule unchanged — the hub holds hooks, never content.
+- Added optional `### Not covered yet` hub subsection (between Investigations and Graph): routes to a note listing deliberately deferred domains.
+- Additive/wording — no structural change to folders or required frontmatter.
+
+**Migration (2.4.0):**
+- [ ] Nothing mandatory. Hubs already using `### Not covered yet` (PMS2.0_PH) are now standard-compliant as-is.
+- [ ] Bump `format_version` to `"2.4.0"` on hubs/notes when convenient (obsidian-migrate-projects handles this later).
 
 ### 2.3.0 — 2026-07-02
 - Added **`investigations/` human type folder** (tag: `investigation`): permanent issue-investigation notes recording symptom → hypotheses ruled out → root cause → resolution, so a recurring issue recalls how it was fixed. `status: open | resolved`; symptom-first titles and hub hooks; `(open)` marker for unresolved. Named exception to atomic rule. Distilled lessons still go to `knowledge/`/`decisions/` and cross-link.
