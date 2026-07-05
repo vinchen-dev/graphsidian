@@ -2,7 +2,7 @@
 tags:
   - meta
   - template
-doc_version: "1.5.0"
+doc_version: "1.6.0"
 aligns_with_format: "2.4.0"
 updated: 2026-07-05
 ---
@@ -24,7 +24,12 @@ Substitute throughout:
 > `<VAULT-ROOT>` is a **placeholder for a real absolute path** that differs per machine. Resolve it once,
 > at the start, in this order and use the result everywhere `<VAULT>` appears:
 >
-> 1. **If `$CLAUDE_VAULT` (`$env:CLAUDE_VAULT`) is set and points at a folder containing `FORMAT.md`** — use it. (Optional convenience; do not depend on it being set.)
+> 1. **Ask the running Obsidian instance** (preferred — always current, even after the vault moves):
+>    ```bash
+>    obsidian vault="Claude" eval code="app.vault.adapter.basePath"
+>    ```
+>    Requires Obsidian to be open with the CLI enabled. Strip the leading `=> ` from the output; verify the
+>    returned folder contains `FORMAT.md` before using it.
 > 2. **Otherwise search for it.** The vault root is the folder that contains **both** `FORMAT.md` and a `Projects/` subdir, and usually sits next to an `.obsidian/` folder. Probe the common locations, e.g.:
 >    ```bash
 >    # POSIX — first hit wins
@@ -45,8 +50,8 @@ Substitute throughout:
 >    vault; a wrong path silently populates the wrong place.
 >
 > Known roots so far (hints, not defaults): macOS `~/Obsidian/Claude`; one Windows box
-> `C:\Users\vince\Desktop\Claude`. Setting `$CLAUDE_VAULT` afterward is optional and only speeds up step 1
-> next time.
+> `C:\Users\vince\Desktop\Obsidian\Claude`. The legacy `$CLAUDE_VAULT` env var is **deprecated** — never
+> read or set it; it goes stale when the vault moves.
 
 > [!note] Platform / shell
 > Command blocks are written for **macOS/Linux (bash)**. On Windows use PowerShell or Git Bash — Step 6

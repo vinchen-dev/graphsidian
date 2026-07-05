@@ -3,7 +3,7 @@ tags:
   - meta
   - howto
 format_version: "2.2.0"
-mirrors_setup: "1.5.0"     # human mirror of graphify-obsidian-setup.md (this doc has no independent version; keep in step)
+mirrors_setup: "1.6.0"     # human mirror of graphify-obsidian-setup.md (this doc has no independent version; keep in step)
 updated: 2026-07-05
 ---
 
@@ -87,8 +87,9 @@ Known roots (hints, not defaults):
 > ```powershell
 > $VAULT = "$HOME\Obsidian\Claude"   # PowerShell
 > ```
-> This is a **convenience only** — the vault *path* is the source of truth, not any variable. (You may still
-> persist a `CLAUDE_VAULT` env var if you like; nothing below depends on it being set.)
+> This is a **convenience only** — the vault *path* is the source of truth, not any variable. With Obsidian
+> open you can always resolve it live: `obsidian vault="Claude" eval code="app.vault.adapter.basePath"`.
+> (The legacy `CLAUDE_VAULT` env var is deprecated — don't set or rely on it.)
 
 **5. Obsidian + the vault** (do this before items 6 & 9 — they copy bundled files out of it). Install the Obsidian app (https://obsidian.md), then sync/restore your vault to your `<VAULT-ROOT>` path, then "Open folder as vault". Claude reads/writes the vault over the **filesystem** — no Obsidian plugin required.
 

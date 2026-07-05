@@ -11,9 +11,11 @@ set -euo pipefail
 #   3. idempotently patch that hook to re-export the graph into Obsidian
 # The one-time semantic build (docs → LLM) is left to `/graphify` inside Claude.
 
-# Vault location. Defaults to ~/Obsidian/Claude; override on a machine where the
-# Obsidian vault lives elsewhere:  CLAUDE_VAULT=/path/to/vault graphify-obsidian-init ...
-VAULT_BASE="${CLAUDE_VAULT:-$HOME/Obsidian/Claude}"
+# Vault location. Resolved from the running Obsidian instance via the obsidian CLI
+# (always current, even after the vault moves); falls back to ~/Obsidian/Claude if
+# Obsidian isn't running or the CLI is unavailable.
+VAULT_BASE="$(obsidian vault="Claude" eval code="app.vault.adapter.basePath" 2>/dev/null | sed 's/^=> //')"
+[ -n "$VAULT_BASE" ] && [ -f "$VAULT_BASE/FORMAT.md" ] || VAULT_BASE="$HOME/Obsidian/Claude"
 
 usage() {
   cat <<EOF
@@ -148,7 +150,7 @@ else
     cat > "$SNIP_TMP" <<PYEOF
     # graphify-obsidian-export (added by graphify-obsidian-init)
     import subprocess as _sp
-    _obsidian_dir = '$AUTO_DIR'  # resolved from the vault base at scaffold time (honors \$CLAUDE_VAULT)
+    _obsidian_dir = '$AUTO_DIR'  # resolved from the vault base at scaffold time (via obsidian CLI; hook runs detached so the path is hardcoded here)
     _r = _sp.run([sys.executable, '-m', 'graphify', 'export', 'obsidian', '--dir', _obsidian_dir], cwd=str(_root), capture_output=True, text=True)
     print('[graphify hook] Obsidian vault updated -> ' + _obsidian_dir) if _r.returncode == 0 else print('[graphify hook] Obsidian export warning: ' + _r.stderr.strip())
 PYEOF

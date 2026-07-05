@@ -1,13 +1,21 @@
 ---
 name: obsidian-audit
-description: Use ONLY when the user types /obsidian-audit — persists what's worth keeping from the conversation (decisions, gotchas, API quirks, patterns) as atomic notes in the Obsidian second-brain vault at $CLAUDE_VAULT/. Capture runs only on explicit /obsidian-audit invocation. Do NOT load this skill for recall or pre-debug lookup — the Vault Recall protocol in ~/.claude/CLAUDE.md covers that standalone.
+description: Use ONLY when the user types /obsidian-audit — persists what's worth keeping from the conversation (decisions, gotchas, API quirks, patterns) as atomic notes in the Obsidian second-brain vault (path resolved via the obsidian CLI). Capture runs only on explicit /obsidian-audit invocation. Do NOT load this skill for recall or pre-debug lookup — use obsidian-recall for that.
 ---
 
 # Obsidian Audit (Capture to Second Brain)
 
-Persist durable knowledge from this session into the second-brain vault at `$CLAUDE_VAULT/`.
+Persist durable knowledge from this session into the Obsidian second-brain vault.
 
-**FIRST: read `$CLAUDE_VAULT/VERSIONS.md`** — it holds the current version numbers to stamp into frontmatter (`format_version` ← FORMAT.md, and the hub's `setup_version` ← graphify-obsidian-setup.md). For a routine capture, do **not** read FORMAT.md — the folder table and templates embedded below are kept in sync with it and are sufficient. Read `$CLAUDE_VAULT/FORMAT.md` (source of truth; wins on any conflict) only when: (1) creating a new project hub, (2) using the multi-part spec pattern (`specs/<topic>/`) for the first time in a project, or (3) anything conflicts with these embedded rules or you are otherwise uncertain how to structure a note.
+**Locating the vault:** resolve the path at runtime from the running Obsidian instance — never from an env var or a remembered path:
+
+```bash
+obsidian vault="Claude" eval code="app.vault.adapter.basePath"
+```
+
+The returned absolute path is `<vault>` in everything below. If the command fails, Obsidian isn't running — tell the user to open Obsidian and stop; do not guess the path.
+
+**FIRST: read `<vault>/VERSIONS.md`** — it holds the current version numbers to stamp into frontmatter (`format_version` ← FORMAT.md, and the hub's `setup_version` ← graphify-obsidian-setup.md). For a routine capture, do **not** read FORMAT.md — the folder table and templates embedded below are kept in sync with it and are sufficient. Read `<vault>/FORMAT.md` (source of truth; wins on any conflict) only when: (1) creating a new project hub, (2) using the multi-part spec pattern (`specs/<topic>/`) for the first time in a project, or (3) anything conflicts with these embedded rules or you are otherwise uncertain how to structure a note.
 
 ## Core Principle
 
@@ -58,10 +66,10 @@ These are hard rules. Violating them corrupts the vault.
 ## Workflow
 
 ### 1. Identify the project
-Derive from the working directory (`~/Desktop/Projects/finance-ai` → `finance-ai`). Check whether `$CLAUDE_VAULT/Projects/<project>/` exists.
+Derive from the working directory (`~/Desktop/Projects/finance-ai` → `finance-ai`). Check whether `<vault>/Projects/<project>/` exists.
 
 ### 2. New project? Create the hub
-If the folder doesn't exist, read `$CLAUDE_VAULT/FORMAT.md` and create `Projects/<project>/<project>.md` from its **Project Hub** template (this is trigger (1) from the note at the top — the hub template is not embedded here; FORMAT.md is the source of truth). Then add a bullet to the Projects list in `$CLAUDE_VAULT/Home.md`:
+If the folder doesn't exist, read `<vault>/FORMAT.md` and create `Projects/<project>/<project>.md` from its **Project Hub** template (this is trigger (1) from the note at the top — the hub template is not embedded here; FORMAT.md is the source of truth). Then add a bullet to the Projects list in `<vault>/Home.md`:
 ```markdown
 - [[Projects/<project>/<project>|<project>]] — <one-line description>
 ```
@@ -167,12 +175,12 @@ After saving, tell the user: each note created/updated (path + one-line hook), a
 
 | Purpose | Path |
 |---------|------|
-| Vault map | `$CLAUDE_VAULT/Home.md` |
-| Format spec | `$CLAUDE_VAULT/FORMAT.md` |
-| Project hub | `$CLAUDE_VAULT/Projects/<project>/<project>.md` |
-| Spec note | `$CLAUDE_VAULT/Projects/<project>/specs/<slug>.md` (multi-part: `specs/<topic>/`) |
-| Decision note | `$CLAUDE_VAULT/Projects/<project>/decisions/<slug>.md` |
-| Knowledge note | `$CLAUDE_VAULT/Projects/<project>/knowledge/<slug>.md` |
-| Reference note | `$CLAUDE_VAULT/Projects/<project>/reference/<slug>.md` |
-| Plan note          | `$CLAUDE_VAULT/Projects/<project>/plans/<slug>.md` |
-| Investigation note | `$CLAUDE_VAULT/Projects/<project>/investigations/<slug>.md` |
+| Vault map | `<vault>/Home.md` |
+| Format spec | `<vault>/FORMAT.md` |
+| Project hub | `<vault>/Projects/<project>/<project>.md` |
+| Spec note | `<vault>/Projects/<project>/specs/<slug>.md` (multi-part: `specs/<topic>/`) |
+| Decision note | `<vault>/Projects/<project>/decisions/<slug>.md` |
+| Knowledge note | `<vault>/Projects/<project>/knowledge/<slug>.md` |
+| Reference note | `<vault>/Projects/<project>/reference/<slug>.md` |
+| Plan note          | `<vault>/Projects/<project>/plans/<slug>.md` |
+| Investigation note | `<vault>/Projects/<project>/investigations/<slug>.md` |

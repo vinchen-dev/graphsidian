@@ -10,6 +10,23 @@ updated: 2026-07-05
 
 Version history for [[graphify-obsidian-setup]]. Registry: [[VERSIONS]].
 
+### 1.6.0 — 2026-07-05
+- **`$CLAUDE_VAULT` env var fully deprecated** (1.5.0 had demoted it to an optional first probe). The vault
+  root is now resolved from the **running Obsidian instance via the obsidian CLI**:
+  `obsidian vault="Claude" eval code="app.vault.adapter.basePath"` (strip the leading `=> `; verify
+  `FORMAT.md` exists in the result). Discovery order is now: (1) obsidian CLI, (2) filesystem search,
+  (3) ask the user. Never read or set `$CLAUDE_VAULT`.
+- `graphify-obsidian-init` no longer honors `$CLAUDE_VAULT`: it resolves `VAULT_BASE` via the obsidian CLI
+  and falls back to `~/Obsidian/Claude` if Obsidian isn't running.
+- The three vault skills (`obsidian-recall`, `obsidian-audit`, `obsidian-init`) resolve the vault the same
+  way — see their "Locating the vault" sections; template copies re-synced from `~/.claude/skills/`.
+- Additive — correctly-wired projects need no re-wiring (the hook's export path was already hardcoded at
+  scaffold time).
+
+**Migration (1.6.0):**
+- [ ] Remove any persisted `CLAUDE_VAULT` env var (`[Environment]::SetEnvironmentVariable("CLAUDE_VAULT", $null, "User")` on Windows).
+- [ ] Bump hub `setup_version` to `"1.6.0"` when convenient — no wiring changes needed.
+
 ### 1.5.0 — 2026-07-05
 - **Cross-platform / portability pass** (template was macOS-centric). Changes:
   - **Vault root is no longer hardcoded** to `~/Obsidian/Claude`, and no longer hinges on an env var. Added

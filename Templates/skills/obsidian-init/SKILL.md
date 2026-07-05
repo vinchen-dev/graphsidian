@@ -7,7 +7,15 @@ description: Use when the user types /obsidian-init after initial graphify+Obsid
 
 Scan the project codebase and populate the Obsidian vault with what can be derived from reading the code. This runs **once after initial setup** — not after every session (that's `/obsidian-audit`).
 
-**FIRST: read `$CLAUDE_VAULT/FORMAT.md`** for folder layout, frontmatter, and note structure. Read `$CLAUDE_VAULT/VERSIONS.md` for current version numbers to stamp into frontmatter.
+**FIRST: locate the vault.** Resolve the path at runtime from the running Obsidian instance — never from an env var or a remembered path:
+
+```bash
+obsidian vault="Claude" eval code="app.vault.adapter.basePath"
+```
+
+The returned absolute path is `<vault>` below. If the command fails, Obsidian isn't running — tell the user to open Obsidian and stop; do not guess the path.
+
+**THEN: read `<vault>/FORMAT.md`** for folder layout, frontmatter, and note structure. Read `<vault>/VERSIONS.md` for current version numbers to stamp into frontmatter.
 
 ## What to scan
 
