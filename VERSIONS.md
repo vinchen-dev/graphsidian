@@ -2,7 +2,7 @@
 tags:
   - meta
   - versioning
-updated: 2026-07-04
+updated: 2026-07-05
 ---
 
 # Vault Document Versions
@@ -21,7 +21,7 @@ section below.
 | Document | Version | Updated | Purpose |
 |----------|---------|---------|---------|
 | [[FORMAT]] | 2.4.0 | 2026-07-04 | Per-project note structure standard — folders, frontmatter, hub, recall protocol |
-| [[graphify-obsidian-setup]] | 1.4.0 | 2026-07-02 | AI procedure to wire graphify + Obsidian onto a project |
+| [[graphify-obsidian-setup]] | 1.5.0 | 2026-07-05 | AI procedure to wire graphify + Obsidian onto a project |
 
 > [[How to Setup]] is the human-facing mirror of [[graphify-obsidian-setup]] — keep the two in step. It
 > carries no independent version; its frontmatter `mirrors_setup` records which setup `doc_version` it's in

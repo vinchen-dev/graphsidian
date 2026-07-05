@@ -3,8 +3,8 @@ tags:
   - meta
   - howto
 format_version: "2.2.0"
-mirrors_setup: "1.4.0"     # human mirror of graphify-obsidian-setup.md (this doc has no independent version; keep in step)
-updated: 2026-07-01
+mirrors_setup: "1.5.0"     # human mirror of graphify-obsidian-setup.md (this doc has no independent version; keep in step)
+updated: 2026-07-05
 ---
 
 # How to Setup — Graphify + Obsidian on a New Project
@@ -68,55 +68,64 @@ PATH note: uv adds the tools bin to PATH automatically. If `graphify` isn't foun
 
 To upgrade later: `uv tool upgrade graphifyy`.
 
-**4. Set `CLAUDE_VAULT`** — the vault path used by all scripts, skills, and setup commands. Set it as a persistent environment variable, then verify:
+**4. Locate your vault root — `<VAULT-ROOT>`.** This is the folder that holds **`FORMAT.md` + a `Projects/` subdir** (usually beside an `.obsidian/` folder). Every command below writes `<VAULT-ROOT>` as a placeholder — **substitute your actual path** (the same way you substitute `<PROJECT>` / `<REPO>`). No environment variable is required.
 
-> **macOS** (default shell: zsh)
-```bash
-echo 'export CLAUDE_VAULT="$HOME/Obsidian/Claude"' >> ~/.zshrc
-source ~/.zshrc
-echo $CLAUDE_VAULT
-```
+Known roots (hints, not defaults):
 
-> **Linux** (default shell: bash)
-```bash
-echo 'export CLAUDE_VAULT="$HOME/Obsidian/Claude"' >> ~/.bashrc
-source ~/.bashrc
-echo $CLAUDE_VAULT
-```
+| Setup | `<VAULT-ROOT>` |
+|---|---|
+| macOS (default) | `~/Obsidian/Claude` |
+| macOS (iCloud) | `~/Library/Mobile Documents/iCloud~md~obsidian/Documents/Claude` |
+| One Windows box | `C:\Users\vince\Desktop\Claude` |
 
-> **Windows (PowerShell)** — sets a permanent user-level env var; restart terminal after
-```powershell
-[System.Environment]::SetEnvironmentVariable("CLAUDE_VAULT", "$HOME\Obsidian\Claude", "User")
-# Restart PowerShell, then verify:
-$env:CLAUDE_VAULT
-```
+> [!tip] Optional convenience — a shell variable so commands paste verbatim
+> Substituting `<VAULT-ROOT>` in every command is tedious. If you prefer, set a shell variable for this
+> session and paste `$VAULT` in its place:
+> ```bash
+> VAULT="$HOME/Obsidian/Claude"   # bash/zsh — your actual vault root
+> ```
+> ```powershell
+> $VAULT = "$HOME\Obsidian\Claude"   # PowerShell
+> ```
+> This is a **convenience only** — the vault *path* is the source of truth, not any variable. (You may still
+> persist a `CLAUDE_VAULT` env var if you like; nothing below depends on it being set.)
 
-> Change the value if your vault lives elsewhere (e.g. `~/Library/Mobile Documents/.../Claude` for iCloud). Everything below uses `$CLAUDE_VAULT` / `$env:CLAUDE_VAULT` — no hardcoded paths.
-
-**5. Obsidian + the vault** (do this before items 6 & 9 — they copy bundled files out of it). Install the Obsidian app (https://obsidian.md), then sync/restore your vault to the path you set in `$CLAUDE_VAULT`, then "Open folder as vault". Claude reads/writes the vault over the **filesystem** — no Obsidian plugin required.
+**5. Obsidian + the vault** (do this before items 6 & 9 — they copy bundled files out of it). Install the Obsidian app (https://obsidian.md), then sync/restore your vault to your `<VAULT-ROOT>` path, then "Open folder as vault". Claude reads/writes the vault over the **filesystem** — no Obsidian plugin required.
 
 > **macOS / Linux**
 ```bash
-ls "$CLAUDE_VAULT"   # confirm vault is present (should show FORMAT.md, Templates/, etc.)
+ls "<VAULT-ROOT>"   # confirm vault is present (should show FORMAT.md, Projects/, Templates/, etc.)
 ```
 
 > **Windows (PowerShell)**
 ```powershell
-ls $env:CLAUDE_VAULT   # confirm vault is present
+ls "<VAULT-ROOT>"   # confirm vault is present
 ```
 
 **6. `graphify-obsidian-init`** — the one-command scaffolder (used in Phase 1). It's a **personal helper script**, not part of graphify, and it's bundled in the vault. Copy it to your local bin and make it executable:
 
 > **macOS / Linux**
 ```bash
-cp "$CLAUDE_VAULT/Templates/bin/graphify-obsidian-init" ~/.local/bin/
+cp "<VAULT-ROOT>/Templates/bin/graphify-obsidian-init" ~/.local/bin/
 chmod +x ~/.local/bin/graphify-obsidian-init
 graphify-obsidian-init --help   # confirm it runs and is on PATH
 ```
 
-> **Windows (native):** this script is bash-only and cannot be installed via PowerShell. Options:
-> - Run it once via **Git Bash** (comes with Git for Windows): open Git Bash and run the `cp` + `chmod` commands above as-is.
-> - Or **skip this step** entirely — see the Windows fallback in Phase 1 Step 1.
+> **Windows (native):** this script is bash-only, so install and run it from **Git Bash** — open **"Git Bash"** from the Start menu. Do **not** use `bash` from PowerShell/CMD: on Windows that launches **WSL**, a separate Linux VM with different `/mnt/c/...` paths and its own filesystem. Git Bash instead maps your drive as `/c/...` and integrates with native Git. One-time install (run inside Git Bash):
+> ```bash
+> # local bin on PATH, persisted in ~/.bashrc. Use a /c/... style path for your
+> # vault root (Git Bash maps C:\ as /c/) to avoid backslash issues in cp.
+> VAULT="/c/Users/<you>/Desktop/Claude"          # your <VAULT-ROOT>, in /c/... form
+> echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+> source ~/.bashrc
+> # install the scaffolder
+> mkdir -p ~/.local/bin
+> cp "$VAULT/Templates/bin/graphify-obsidian-init" ~/.local/bin/
+> chmod +x ~/.local/bin/graphify-obsidian-init
+> graphify-obsidian-init --help   # confirm it runs and is on PATH
+> ```
+> Also confirm `graphify` itself is reachable inside Git Bash (`command -v graphify`) — the git hook the scaffolder installs calls `graphify` by name. If it's missing, add its directory to PATH in `~/.bashrc` the same way.
+> Prefer not to use Git Bash? **Skip this step** and use the PowerShell fallback in Phase 1 Step 1 (let Claude scaffold).
 
 > If the script is ever missing, the manual steps in [[graphify-obsidian-setup]] reproduce exactly what it does — you can run those instead (see Phase 2's fallback note).
 
@@ -145,21 +154,21 @@ This fires **only** when a repo actually has a `graphify-out/`, so it's harmless
 > **macOS / Linux**
 ```bash
 mkdir -p ~/.claude/skills
-cp -r "$CLAUDE_VAULT/Templates/skills/obsidian-audit" ~/.claude/skills/
-cp -r "$CLAUDE_VAULT/Templates/skills/obsidian-init" ~/.claude/skills/
-cp -r "$CLAUDE_VAULT/Templates/skills/graphify" ~/.claude/skills/
-cp -r "$CLAUDE_VAULT/Templates/skills/obsidian-format-update" ~/.claude/skills/
-cp -r "$CLAUDE_VAULT/Templates/skills/obsidian-migrate-projects" ~/.claude/skills/
+cp -r "<VAULT-ROOT>/Templates/skills/obsidian-audit" ~/.claude/skills/
+cp -r "<VAULT-ROOT>/Templates/skills/obsidian-init" ~/.claude/skills/
+cp -r "<VAULT-ROOT>/Templates/skills/graphify" ~/.claude/skills/
+cp -r "<VAULT-ROOT>/Templates/skills/obsidian-format-update" ~/.claude/skills/
+cp -r "<VAULT-ROOT>/Templates/skills/obsidian-migrate-projects" ~/.claude/skills/
 ```
 
 > **Windows (PowerShell)**
 ```powershell
 New-Item -ItemType Directory -Force "$HOME\.claude\skills"
-Copy-Item -Recurse "$env:CLAUDE_VAULT\Templates\skills\obsidian-audit" "$HOME\.claude\skills\"
-Copy-Item -Recurse "$env:CLAUDE_VAULT\Templates\skills\obsidian-init" "$HOME\.claude\skills\"
-Copy-Item -Recurse "$env:CLAUDE_VAULT\Templates\skills\graphify" "$HOME\.claude\skills\"
-Copy-Item -Recurse "$env:CLAUDE_VAULT\Templates\skills\obsidian-format-update" "$HOME\.claude\skills\"
-Copy-Item -Recurse "$env:CLAUDE_VAULT\Templates\skills\obsidian-migrate-projects" "$HOME\.claude\skills\"
+Copy-Item -Recurse "<VAULT-ROOT>\Templates\skills\obsidian-audit" "$HOME\.claude\skills\"
+Copy-Item -Recurse "<VAULT-ROOT>\Templates\skills\obsidian-init" "$HOME\.claude\skills\"
+Copy-Item -Recurse "<VAULT-ROOT>\Templates\skills\graphify" "$HOME\.claude\skills\"
+Copy-Item -Recurse "<VAULT-ROOT>\Templates\skills\obsidian-format-update" "$HOME\.claude\skills\"
+Copy-Item -Recurse "<VAULT-ROOT>\Templates\skills\obsidian-migrate-projects" "$HOME\.claude\skills\"
 ```
 
 Then open your `CLAUDE.md` (path in Step 8) and add these two trigger blocks (paste them after the graph-first block from Step 8):
@@ -178,7 +187,7 @@ When the user types `/obsidian-audit`, invoke the Skill tool with `skill: "obsid
 
 ---
 
-Substitute `<PROJECT>` (e.g. `finance-ai`) and `<REPO>` (path to the code) in the per-project steps below.
+Substitute `<PROJECT>` (e.g. `finance-ai`), `<REPO>` (path to the code), and `<VAULT-ROOT>` (your vault root from *Machine setup* Step 4) in the per-project steps below. `<VAULT>` is shorthand for `<VAULT-ROOT>/Projects/<PROJECT>`.
 
 ---
 
@@ -201,7 +210,12 @@ graphify-obsidian-init finance-ai
 ```
 
 > **Windows (native) — two options (pick one):**
-> - **Git Bash:** open Git Bash (comes with Git for Windows), `cd` to `<REPO>`, and run the same commands above. Git Bash has bash + the script will work.
+> - **Git Bash (recommended):** open **"Git Bash"** from the Start menu (not `bash` in PowerShell — that's WSL). `cd` to your repo using a `/c/...` path, then run the scaffolder:
+>   ```bash
+>   cd /c/Users/<you>/Desktop/Projects/<PROJECT>
+>   graphify-obsidian-init <PROJECT>
+>   ```
+>   Requires the one-time Git Bash install in *Machine setup* Step 6.
 > - **Fallback (PowerShell):** skip the script entirely and let Claude scaffold it — in Phase 2, hand Claude the AI guide (see fallback note in Step 3).
 
 Scaffolds the vault, installs the git hooks (**post-commit** + **post-checkout** — both 0-token rebuilds),
@@ -274,21 +288,21 @@ Get-Content "$HOME\.cache\graphify-rebuild.log" -Tail 10
 Expect both lines to appear:
 ```
 [graphify hook] N file(s) changed - rebuilding graph...
-[graphify hook] Obsidian vault updated -> $CLAUDE_VAULT/Projects/<PROJECT>/graphify-auto/
+[graphify hook] Obsidian vault updated -> <VAULT>/graphify-auto/
 ```
 
 > [!warning] If the log is empty or shows no "Obsidian vault updated" line
 > 1. Check the hook is executable: `ls -l <REPO>/.git/hooks/post-commit` — should show `-rwxr-xr-x`
 > 2. Check graphify is on PATH inside the hook's environment: `which graphify`
 > 3. Re-run `graphify-obsidian-init <PROJECT>` (it's idempotent) to re-patch the hook
-> 4. As a manual fallback: `cd <REPO> && graphify update . && graphify export obsidian --dir "$CLAUDE_VAULT/Projects/<PROJECT>/graphify-auto/"`
+> 4. As a manual fallback: `cd <REPO> && graphify update . && graphify export obsidian --dir "<VAULT>/graphify-auto/"`
 
 ### Step 5. Run the AI build + initial vault scan
 
 Open Claude Code in `<REPO>` and give it the AI guide. Because Phase 1's scaffolder already created the vault, hub, and hook, tell Claude to skip those steps:
 
 ```
-Read $CLAUDE_VAULT/Templates/graphify-obsidian-setup.md. The scaffolder already ran (vault folders, hub, and hook are done). Start at Step 2 (build graph), then continue from Step 5 onward. Project name: <PROJECT>.
+Read <VAULT-ROOT>/Templates/graphify-obsidian-setup.md. The scaffolder already ran (vault folders, hub, and hook are done). Start at Step 2 (build graph), then continue from Step 5 onward. Project name: <PROJECT>.
 ```
 
 > **Windows / scaffolder skipped:** if Phase 1 used the fallback instead, omit the "scaffolder already ran" sentence — Claude will follow all steps from Step 1.

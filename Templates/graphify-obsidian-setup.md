@@ -2,9 +2,9 @@
 tags:
   - meta
   - template
-doc_version: "1.4.0"
-aligns_with_format: "2.2.0"
-updated: 2026-07-02
+doc_version: "1.5.0"
+aligns_with_format: "2.4.0"
+updated: 2026-07-05
 ---
 
 # Template: Wire Graphify + Obsidian on an Existing Project
@@ -16,8 +16,43 @@ Reusable setup guide for adding the two-layer knowledge system (Obsidian vault f
 
 Substitute throughout:
 - `<PROJECT>` — project name (e.g. `finance-ai`)
-- `<REPO>` — absolute path to the code (e.g. `~/Desktop/Projects/<PROJECT>`)
-- `<VAULT>` — `~/Obsidian/Claude/Projects/<PROJECT>`
+- `<REPO>` — absolute path to the code (macOS `~/Desktop/Projects/<PROJECT>`, Windows `C:\Users\<you>\Desktop\Projects\<PROJECT>`)
+- `<VAULT-ROOT>` — the Obsidian vault root (the folder that holds `FORMAT.md` + `Projects/`). **Machine-specific — discover it, don't assume** (see below).
+- `<VAULT>` — the project's folder inside that root: `<VAULT-ROOT>/Projects/<PROJECT>`
+
+> [!important] Find the vault root — discover it, then substitute a concrete path
+> `<VAULT-ROOT>` is a **placeholder for a real absolute path** that differs per machine. Resolve it once,
+> at the start, in this order and use the result everywhere `<VAULT>` appears:
+>
+> 1. **If `$CLAUDE_VAULT` (`$env:CLAUDE_VAULT`) is set and points at a folder containing `FORMAT.md`** — use it. (Optional convenience; do not depend on it being set.)
+> 2. **Otherwise search for it.** The vault root is the folder that contains **both** `FORMAT.md` and a `Projects/` subdir, and usually sits next to an `.obsidian/` folder. Probe the common locations, e.g.:
+>    ```bash
+>    # POSIX — first hit wins
+>    for d in ~/Obsidian/Claude ~/Desktop/Claude ~/Documents/Claude \
+>             ~/Documents/Obsidian/Claude "$HOME"/*/Claude; do
+>      [ -f "$d/FORMAT.md" ] && [ -d "$d/Projects" ] && echo "VAULT-ROOT=$d" && break
+>    done
+>    ```
+>    ```powershell
+>    # Windows PowerShell
+>    'Obsidian\Claude','Desktop\Claude','Documents\Claude','Documents\Obsidian\Claude' |
+>      ForEach-Object { Join-Path $HOME $_ } |
+>      Where-Object { Test-Path (Join-Path $_ 'FORMAT.md') -and (Test-Path (Join-Path $_ 'Projects')) } |
+>      Select-Object -First 1
+>    ```
+>    (If those miss, widen to a filesystem search for a `FORMAT.md` beside an `.obsidian/` marker.)
+> 3. **If it still can't be found — ask the user for the vault-root path.** Don't guess or create a new
+>    vault; a wrong path silently populates the wrong place.
+>
+> Known roots so far (hints, not defaults): macOS `~/Obsidian/Claude`; one Windows box
+> `C:\Users\vince\Desktop\Claude`. Setting `$CLAUDE_VAULT` afterward is optional and only speeds up step 1
+> next time.
+
+> [!note] Platform / shell
+> Command blocks are written for **macOS/Linux (bash)**. On Windows use PowerShell or Git Bash — Step 6
+> already lists both. Where a step embeds an **absolute path inside code** (the hook's Obsidian export in
+> Step 4, the optional report copy), substitute the *resolved* `<VAULT>` path for that machine — never a
+> literal `~/Obsidian/...`.
 
 ---
 
@@ -101,6 +136,8 @@ graph. This is per-project tuning — inspect the repo and add what's noise for 
 
 ```python
     import shutil as _sh
+    # Use the RESOLVED absolute vault path for this machine (see "Resolve the vault root" above),
+    # not a literal ~/Obsidian/... . expanduser('~') resolves to the user home on every OS.
     _sh.copy(str(_root / 'graphify-out' / 'GRAPH_REPORT.md'),
              os.path.expanduser('~/Obsidian/Claude/Projects/<PROJECT>/graphify-auto/GRAPH_REPORT.md'))
 ```
@@ -109,8 +146,17 @@ graph. This is per-project tuning — inspect the repo and add what's noise for 
 
 ## Step 1 — Create the vault hub
 
+> **macOS / Linux (bash)**
 ```bash
 mkdir -p <VAULT>/{specs,decisions,knowledge,reference,plans,investigations}
+```
+
+> **Windows (PowerShell)** — brace-expansion isn't supported; loop instead:
+```powershell
+# <VAULT> = the discovered vault root + \Projects\<PROJECT>
+'specs','decisions','knowledge','reference','plans','investigations' | % {
+  New-Item -ItemType Directory -Force "<VAULT>\$_" | Out-Null
+}
 ```
 
 Create `<VAULT>/<PROJECT>.md` from the **Project Hub** template in `FORMAT.md`. Stamp **both** version fields
@@ -148,16 +194,48 @@ graphify hook install
 do not re-export to Obsidian.** Fix the post-commit one in Step 4. (Note: neither hook fires on `git pull` — see
 *Daily use* for the `graphify update .` resync.)
 
+> [!warning] Husky / a custom `core.hooksPath` (common on JS/TS repos)
+> If the repo uses **Husky** (or otherwise sets `git config core.hooksPath`), git does **not** read
+> `.git/hooks/` — hooks live in the pointed-at dir (Husky v9 → `.husky/`, with shims in `.husky/_`).
+> Two consequences:
+>
+> 1. **`graphify hook install` may error** with *"hooks path from core.hooksPath looks like a Windows
+>    path"* — recent graphify rejects a Windows-style `core.hooksPath`. This does **not** mean the hook is
+>    missing: an earlier run (or graphify itself) may already have written the rebuild block into
+>    `.husky/post-commit` / `.husky/post-checkout`. Check first:
+>    ```bash
+>    git config --get core.hooksPath                 # e.g. .husky/_  → Husky is active
+>    grep -l 'graphify-hook-start' .husky/post-commit .git/hooks/post-commit 2>/dev/null
+>    ```
+>    - If a file already contains `graphify-hook-start`, the hook is installed — skip install, just patch
+>      that file in Step 4.
+>    - If not, install into the Husky dir manually: create `.husky/post-commit` and `.husky/post-checkout`
+>      containing graphify's rebuild block (copy from another wired repo, or run `graphify hook install`
+>      from a shell where `core.hooksPath` is temporarily unset, then move the generated files into
+>      `.husky/`). **Do not** just `git config --unset core.hooksPath` — that silently disables Husky's
+>      own hooks (lint-staged, commit-msg).
+> 2. Graphify's block **coexists** with Husky's — append it as an extra hook file; don't overwrite
+>    `.husky/pre-commit` (lint-staged).
+>
+> `.husky/` is usually gitignored and hooks are never version-controlled anyway, so re-apply after a fresh
+> clone (same as `.git/hooks/`).
+
 ## Step 4 — Wire the Obsidian export into the hook (the missing piece)
 
-Edit `<REPO>/.git/hooks/post-commit`. Find the embedded `_src` Python block, locate the `_rebuild_code(...)` call, and insert the export immediately after it:
+Edit the post-commit hook — `<REPO>/.git/hooks/post-commit`, **or `<REPO>/.husky/post-commit` if the repo uses Husky / a custom `core.hooksPath`** (see the Step 3 warning; patch whichever file actually contains the `graphify-hook-start` marker). Find the embedded `_src` Python block, locate the `_rebuild_code(...)` call, and insert the export immediately after it:
 
 ```python
     _rebuild_code(_root, changed_paths=changed, force=_force)
 
-    # Export updated graph to Obsidian vault
+    # Export updated graph to Obsidian vault.
+    # Hardcode the DISCOVERED absolute vault path for THIS machine here (the <VAULT>/graphify-auto/ you
+    # resolved during setup) — the hook runs detached and under GUI git clients, so it can't discover or
+    # read env vars at run time. expanduser('~') resolves to the user home on every OS, so pick the
+    # expanduser form whose tail matches where the vault actually lives:
     import subprocess as _sp
-    _obsidian_dir = os.path.expanduser('~/Obsidian/Claude/Projects/<PROJECT>/graphify-auto/')
+    _obsidian_dir = os.path.expanduser('~/Obsidian/Claude/Projects/<PROJECT>/graphify-auto/')      # macOS default
+    # e.g. a Windows box with the vault on the Desktop:
+    # _obsidian_dir = os.path.expanduser('~/Desktop/Claude/Projects/<PROJECT>/graphify-auto/')
     _r = _sp.run(
         [sys.executable, '-m', 'graphify', 'export', 'obsidian', '--dir', _obsidian_dir],
         cwd=str(_root), capture_output=True, text=True
@@ -235,8 +313,8 @@ tail ~/.cache/graphify-rebuild.log       # should show rebuild + "Obsidian vault
 
 > **Windows (PowerShell)**
 ```powershell
-ls $env:CLAUDE_VAULT\Projects\<PROJECT>\                    # specs decisions knowledge reference plans investigations graphify-auto
-ls $env:CLAUDE_VAULT\Projects\<PROJECT>\graphify-auto\ | Select-Object -First 3
+ls <VAULT>\                                                # specs decisions knowledge reference plans investigations graphify-auto
+ls <VAULT>\graphify-auto\ | Select-Object -First 3
 Get-Content <REPO>\.graphifyignore
 if (Select-String -Path "$HOME\.claude\CLAUDE.md" -Pattern 'Knowledge Graph' -Quiet) { "global graph-first directive present ✓" }
 # make a trivial commit, then:

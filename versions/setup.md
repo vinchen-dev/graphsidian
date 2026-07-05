@@ -3,12 +3,39 @@ tags:
   - meta
   - changelog
 tracks: graphify-obsidian-setup
-updated: 2026-07-02
+updated: 2026-07-05
 ---
 
 # graphify-obsidian-setup.md — changelog
 
 Version history for [[graphify-obsidian-setup]]. Registry: [[VERSIONS]].
+
+### 1.5.0 — 2026-07-05
+- **Cross-platform / portability pass** (template was macOS-centric). Changes:
+  - **Vault root is no longer hardcoded** to `~/Obsidian/Claude`, and no longer hinges on an env var. Added
+    `<VAULT-ROOT>` as a placeholder resolved by a **discover-first protocol**: (1) use `$CLAUDE_VAULT` only if
+    already set and valid, (2) else search common locations for the folder holding `FORMAT.md` + `Projects/`
+    (POSIX + PowerShell snippets given), (3) else **ask the user** — never guess or create a new vault. Known
+    roots listed as hints only (macOS `~/Obsidian/Claude`; a Windows box `C:\Users\vince\Desktop\Claude`).
+  - Added a **Platform / shell** note: bash blocks are macOS/Linux; Windows uses PowerShell/Git Bash;
+    embedded absolute paths get the *resolved* `<VAULT>`, not a literal `~/Obsidian/...`.
+  - Added a **Husky / `core.hooksPath`** warning (Step 3): `graphify hook install` can error on a
+    Windows-style `core.hooksPath`, hooks live in `.husky/` not `.git/hooks/`, how to detect an
+    already-installed block, how to install into `.husky/` without disabling Husky's own hooks, and that
+    graphify's block coexists with lint-staged.
+  - **Step 4** now says to patch `.git/hooks/post-commit` **or `.husky/post-commit`** (whichever holds the
+    `graphify-hook-start` marker), and the embedded export path carries a Windows example + a note that the
+    hook runs detached so `$CLAUDE_VAULT` can't be relied on — hardcode the resolved path.
+  - **Step 1** gained a PowerShell variant (brace-expansion `mkdir` isn't supported there).
+  - Bumped `aligns_with_format` 2.2.0 → 2.4.0 (layout references — incl. `investigations/` — match current FORMAT).
+- Additive/clarifying — no change to correctly-wired projects. A project already at 1.4.0 stays valid; bump
+  its hub `setup_version` to `1.5.0` opportunistically (nothing to re-wire unless it uses Husky and was
+  missing the `.husky/` hook or the Obsidian export patch).
+
+**Migration (1.5.0):**
+- [ ] No action for POSIX projects wired correctly at 1.4.0 — bump hub `setup_version` to `"1.5.0"` when convenient.
+- [ ] If a project uses Husky/`core.hooksPath`: confirm the graphify rebuild block lives in `.husky/post-commit`
+      (not `.git/hooks/`) and that the **Obsidian export patch** (Step 4) is present in it.
 
 ### 1.4.0 — 2026-07-02
 - Init script now creates `investigations/` alongside the other type folders (`mkdir -p …{specs,decisions,knowledge,reference,plans,investigations}`).
