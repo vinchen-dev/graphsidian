@@ -108,6 +108,13 @@ See also: [[<project>]]
 ```
 If a note on the topic already exists, extend it rather than duplicating.
 
+**Plan notes** additionally carry a lifecycle in frontmatter (FORMAT.md → Plan Notes):
+```markdown
+status: active                # active | done
+completed:                    # <YYYY-MM-DD> when done
+```
+New plans start as `status: active`.
+
 **Investigation notes** use this canonical template:
 ```markdown
 ---
@@ -147,6 +154,8 @@ Rules for investigation notes:
 - Extend an existing open investigation note rather than creating a duplicate.
 - On resolution: set `status: resolved` + `resolved:` date, fill the Resolution section, cross-link any distilled note.
 
+**Marking plans done:** if this session *explicitly* shows a previously captured plan was completed — implemented, shipped, or the user said it's done — propose flipping it: set `status: done` + `completed: <YYYY-MM-DD>` in the plan note, and append `(done)` to its hub entry (keep the entry). Session evidence only: never infer completion, and do not sweep the project's other active plans looking for candidates.
+
 ### 4. Link from the hub
 Add each new note under the matching **type subsection** of `## Notes` in `Projects/<project>/<project>.md` (Specs / Decisions / Knowledge / Reference / Plans / Investigations). For a multi-part topic, link only its index note:
 ```markdown
@@ -154,6 +163,8 @@ Add each new note under the matching **type subsection** of `## Notes` in `Proje
 ```
 
 Investigations are listed under `### Investigations (\`investigations/\`)` in the hub. The hook is the observable symptom. Mark open investigations with `(open)`; remove the marker on resolution.
+
+Plans are the inverse: active plans stay unmarked; append `(done)` to a plan's hub entry when it is completed, so the Plans subsection reads as current intent at a glance.
 
 Example:
 ```markdown
@@ -164,6 +175,7 @@ Example:
 ### 5. Confirm before saving
 Before writing any note, present the full proposed list to the user:
 - Each candidate note: slug, type folder, and one-line summary of what it captures
+- Any plan status flips (active → done), each with the session evidence for completion
 - Anything you're deliberately skipping and why
 
 **Wait for explicit user approval before creating or editing any file.** Do not write speculatively and report after — the user decides what gets saved.

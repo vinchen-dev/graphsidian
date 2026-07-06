@@ -3,13 +3,23 @@ tags:
   - meta
   - changelog
 tracks: FORMAT
-updated: 2026-07-04
+updated: 2026-07-06
 ---
 
 # FORMAT.md — changelog
 
 Version history and per-version migration checklists for [[FORMAT]]. Registry: [[VERSIONS]].
 [[FORMAT]]'s *Migrating* section points here.
+
+### 2.5.0 — 2026-07-06
+- **Plan notes gained a lifecycle:** frontmatter `status: active | done` + `completed: <YYYY-MM-DD>` when done. Completed plans keep their hub entry with a `(done)` marker appended; active plans stay unmarked. `/obsidian-audit` proposes the flip in its confirm step when a session explicitly shows a plan was completed — never inferred, no sweeping of other active plans.
+- Added **Plan Notes** section to [[FORMAT]] (lifecycle, hub marker, flip rule). `obsidian-audit` and `obsidian-recall` skills updated across all four setups (Templates, `~/.claude`, `~/.codex`, `~/.agents`).
+- Additive — no structural change to folders or required frontmatter.
+
+**Migration (2.5.0):**
+- [ ] Nothing mandatory. Existing plan notes gain `status:` (and `completed:` if applicable) the next time they are touched.
+- [ ] Append `(done)` to hub entries of plans already known to be completed, when convenient.
+- [ ] Bump `format_version` to `"2.5.0"` on hubs/notes when convenient (obsidian-migrate-projects handles this later).
 
 ### 2.4.0 — 2026-07-04
 - **Hub budget scales for large projects:** baseline ≤ ~400 words; +~1 router line per additional routed `…-00-index`/topic beyond the baseline. Hard rule unchanged — the hub holds hooks, never content.

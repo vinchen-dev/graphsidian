@@ -1,11 +1,11 @@
 ---
 tags:
   - meta
-format_version: "2.4.0"
-updated: 2026-07-04
+format_version: "2.5.0"
+updated: 2026-07-06
 ---
 
-# Project Format — v2.4.0
+# Project Format — v2.5.0
 
 The **single source of truth** for how every project is structured in this vault. The `/obsidian-audit` skill follows this file. Change the format here, bump the version, log it in the [Changelog](#changelog), then migrate existing projects (see [Migrating](#migrating)).
 
@@ -145,6 +145,21 @@ See also: [[<project>]]
 <Optional: [[distilled-knowledge-note]] — lesson extracted from this investigation.>
 ```
 
+## Plan Notes
+
+Plan notes carry a **lifecycle** so a reader can tell current intent from history. Frontmatter (extends the atomic note template):
+
+```markdown
+status: active                # active | done
+completed:                    # <YYYY-MM-DD> when done
+```
+
+Set `status: active` when the plan is written and `status: done` (plus `completed: <YYYY-MM-DD>`) once it has been implemented. Done plans are **kept, not deleted** — an active plan answers "what are we building?"; a done plan answers "how was X built?".
+
+**Hub marker:** append `(done)` to a completed plan's hub hook — keep the entry. Active plans stay unmarked, so the Plans subsection reads as current intent at a glance.
+
+**Who flips it:** `/obsidian-audit` proposes the flip (in its confirm-before-saving step) when a session *explicitly* shows a captured plan was completed — implemented, shipped, or stated by the user. Completion is never inferred.
+
 ## Project Hub — `<project>/<project>.md`
 
 ```markdown
@@ -253,6 +268,11 @@ When this file's version changes:
 4. A project is fully migrated when its hub and all notes match the current version.
 
 ## Changelog
+
+### 2.5.0 — 2026-07-06
+- **Plan notes gained a lifecycle:** frontmatter `status: active | done` plus `completed: <YYYY-MM-DD>` when done. Completed plans keep their hub entry with a `(done)` marker appended; active plans stay unmarked. `/obsidian-audit` proposes the flip on explicit session evidence only.
+- Added the **Plan Notes** section documenting the lifecycle, hub marker, and flip rule.
+- Additive — MINOR; existing plan notes gain `status:` when next touched, no immediate sweep.
 
 ### 2.4.0 — 2026-07-04
 - **Hub budget now scales:** baseline ≤ ~400 words; hubs routing many multi-part topics may add ~1 router line per additional `…-00-index`/topic beyond the baseline. Hard rule unchanged: hooks, never content.
