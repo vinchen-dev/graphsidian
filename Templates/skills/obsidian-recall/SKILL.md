@@ -32,7 +32,7 @@ The vault's whole layout — hub + atomic notes with high-signal hooks — exist
 
 **Recurring issue / bug report:** go straight to `### Investigations` in the hub, scan hooks for a matching symptom, open the matched note before investigating from scratch. Resolved investigations (`status: resolved`) still carry the root cause and fix — they aren't deleted, so a recurrence recalls what happened last time.
 
-**Plan lookups:** hub entries under `### Plans` marked `(done)` are completed/historical (`status: done` in the note). For "what's the plan for X" prefer unmarked (active) plans; a `(done)` plan still answers "how was X built / what was the original plan".
+**PRD and plan lookups:** PRDs are plan notes and live under `### Plans`, not `### Specs`; specs describe behavior as built, while PRDs describe intended behavior. Hub entries under `### Plans` marked `(done)` are completed/historical (`status: done` in the note). For "what's the PRD/plan for X" prefer unmarked (active) plans; a `(done)` plan still answers "how was X built / what did the original PRD or plan require".
 
 **Code-structure questions** ("what calls X", "trace the flow through Y") are out of scope here — query the graph instead: `graphify query "<question>"`. The hub→note protocol doesn't apply to `graphify-auto/` nodes.
 
@@ -46,7 +46,7 @@ Report plainly: "No vault note covers this" (or "closest is `[[note]]` but it's 
 |---|---|
 | "Why did we pick X over Y?" | Hub → `### Decisions` → matching hook |
 | "Have we hit this error before?" | Hub → `### Investigations` → matching symptom |
-| "What's the plan for Z?" | Hub → `### Plans` → matching hook |
+| "What's the PRD/plan for Z?" | Hub → `### Plans` → matching hook |
 | "How does feature F behave?" | Hub → `### Specs` → matching hook (or `…-00-index` if multi-part) |
 | "What calls/uses X in the code?" | Not this skill — `graphify query` instead |
 | No hub for this project | Stop, report no notes exist — don't search elsewhere |

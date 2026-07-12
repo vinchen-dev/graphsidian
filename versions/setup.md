@@ -3,12 +3,35 @@ tags:
   - meta
   - changelog
 tracks: graphify-obsidian-setup
-updated: 2026-07-05
+updated: 2026-07-12
 ---
 
 # graphify-obsidian-setup.md — changelog
 
 Version history for [[graphify-obsidian-setup]]. Registry: [[VERSIONS]].
+
+### 1.7.1 — 2026-07-12
+- Updated the bundled `obsidian-audit` skill to classify finalized PRDs as active `plan` notes under
+  `plans/`.
+- Updated the bundled `obsidian-recall` skill to route PRD requirement questions through the hub's
+  `### Plans` subsection rather than `### Specs`, which remains reserved for behavior as built.
+- Clarification only — the existing vault layout and note frontmatter already support PRDs as plan notes;
+  no project migration or rewiring is required.
+
+### 1.7.0 — 2026-07-12
+- Added Codex as a fully supported setup agent alongside Claude Code.
+- Machine setup now covers Codex CLI installation, global instructions in `~/.codex/AGENTS.md`, and user
+  skills in `~/.agents/skills/`, while retaining Claude Code's `~/.claude/CLAUDE.md` and
+  `~/.claude/skills/` paths.
+- Phase 2 and the AI setup template now use agent-neutral instructions and support semantic extraction
+  through subagents from either Claude Code or Codex.
+- Additive — existing Claude Code installations remain valid; Codex users only need to install the same
+  skills and global graph-first directive in the Codex-specific locations.
+
+**Migration (1.7.0):**
+- [ ] If using Codex, copy the bundled skills to `~/.agents/skills/` and add the graph-first and trigger
+      blocks to `~/.codex/AGENTS.md`.
+- [ ] Bump hub `setup_version` to `"1.7.0"` after verifying the chosen agent setup.
 
 ### 1.6.0 — 2026-07-05
 - **`$CLAUDE_VAULT` env var fully deprecated** (1.5.0 had demoted it to an optional first probe). The vault

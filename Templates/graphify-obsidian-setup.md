@@ -2,9 +2,9 @@
 tags:
   - meta
   - template
-doc_version: "1.6.0"
+doc_version: "1.7.1"
 aligns_with_format: "2.4.0"
-updated: 2026-07-05
+updated: 2026-07-12
 ---
 
 # Template: Wire Graphify + Obsidian on an Existing Project
@@ -184,8 +184,8 @@ cd <REPO>
 
 This runs detection → AST extraction (free, code) + semantic extraction (LLM subagents, docs) → clustering → outputs in `graphify-out/` (`graph.json`, `GRAPH_REPORT.md`, `graph.html`).
 
-> [!note] Use Claude subagents, not Gemini
-> If `GEMINI_API_KEY`/`GOOGLE_API_KEY` is set graphify will route semantic extraction through Gemini. Unset it to use Claude subagents instead.
+> [!note] Use the active agent's subagents, not Gemini
+> If `GEMINI_API_KEY`/`GOOGLE_API_KEY` is set graphify will route semantic extraction through Gemini. Unset it to use Claude Code or Codex subagents instead.
 
 ## Step 3 — Export to the vault + install the hook
 
@@ -253,12 +253,11 @@ Edit the post-commit hook — `<REPO>/.git/hooks/post-commit`, **or `<REPO>/.hus
 
 The export runs in the hook's detached background process, so commits still return immediately. Log: `~/.cache/graphify-rebuild.log`.
 
-> **Graph-first behaviour is global — no per-project `CLAUDE.md` step.** It lives once in the user's global
-> `~/.claude/CLAUDE.md` as a conditional directive that fires only when a repo has a `graphify-out/` (so it
-> auto-applies to this project and every other graphify repo, with nothing to paste here). That global
-> directive is the **durable** mechanism — it works even where `graphify claude install`'s PreToolUse hook
-> silently no-ops (newer Claude Code lacks distinct `Grep`/`Glob` tools). It's a one-time-per-machine setup;
-> see [[How to Setup]] → *Machine setup* for the exact block to put in `~/.claude/CLAUDE.md` on a new PC.
+> **Graph-first behaviour is global — no per-project instruction-file step.** It lives once per installed
+> agent in `~/.claude/CLAUDE.md` (Claude Code) and/or `~/.codex/AGENTS.md` (Codex), as a conditional directive
+> that fires only when a repo has a `graphify-out/`. The global directive is the durable mechanism; it also
+> works where `graphify claude install`'s PreToolUse hook silently no-ops. See [[How to Setup]] → *Machine
+> setup* for the exact blocks and the separate skill locations (`~/.claude/skills` and `~/.agents/skills`).
 
 ## Step 5 — Add the hub Graph section + a hook gotcha note
 
@@ -275,13 +274,13 @@ Create `<VAULT>/knowledge/git-hook-graphify.md` (tag `gotcha` + `tooling`) recor
 
 ## Step 5b — Populate the vault from the codebase
 
-In the Claude Code session, type:
+In the Claude Code or Codex session, type:
 
 ```
 /obsidian-init
 ```
 
-Claude will scan entry points, services, routes, models, utilities, and config, then present the full candidate note list for `specs/`, `knowledge/`, and `reference/` for approval before writing anything. It also fills the hub's placeholder fields (summary, stack, Key Paths table).
+The agent will scan entry points, services, routes, models, utilities, and config, then present the full candidate note list for `specs/`, `knowledge/`, and `reference/` for approval before writing anything. It also fills the hub's placeholder fields (summary, stack, Key Paths table).
 
 > [!note] This is not `/obsidian-audit`
 > `/obsidian-audit` is for capturing knowledge from a work session. `/obsidian-init` is for the one-time initial vault population from code. Use each only in its intended context.
@@ -311,7 +310,7 @@ Also fills the hub's placeholder fields:
 ls <VAULT>/                              # specs decisions knowledge reference plans investigations graphify-auto
 ls <VAULT>/graphify-auto/ | head -3      # one .md per code entity
 cat <REPO>/.graphifyignore               # corpus tuning present
-grep -q 'Knowledge Graph' ~/.claude/CLAUDE.md && echo "global graph-first directive present ✓"
+if grep -q 'Knowledge Graph' ~/.claude/CLAUDE.md 2>/dev/null || grep -q 'Knowledge Graph' ~/.codex/AGENTS.md 2>/dev/null; then echo "global graph-first directive present ✓"; fi
 # make a trivial commit, then:
 tail ~/.cache/graphify-rebuild.log       # should show rebuild + "Obsidian vault updated"
 ```
@@ -321,7 +320,8 @@ tail ~/.cache/graphify-rebuild.log       # should show rebuild + "Obsidian vault
 ls <VAULT>\                                                # specs decisions knowledge reference plans investigations graphify-auto
 ls <VAULT>\graphify-auto\ | Select-Object -First 3
 Get-Content <REPO>\.graphifyignore
-if (Select-String -Path "$HOME\.claude\CLAUDE.md" -Pattern 'Knowledge Graph' -Quiet) { "global graph-first directive present ✓" }
+$instructionFiles = "$HOME\.claude\CLAUDE.md", "$HOME\.codex\AGENTS.md" | Where-Object { Test-Path $_ }
+if ($instructionFiles | Select-String -Pattern 'Knowledge Graph' -Quiet) { "global graph-first directive present ✓" }
 # make a trivial commit, then:
 Get-Content "$HOME\.cache\graphify-rebuild.log" -Tail 10   # should show rebuild + "Obsidian vault updated"
 ```

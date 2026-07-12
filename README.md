@@ -3,11 +3,11 @@ tags:
   - meta
 ---
 
-# Claude Obsidian Vault
+# Claude Code + Codex Obsidian Vault
 
-An Obsidian vault that gives Claude Code agents persistent memory across sessions. Stores project knowledge — decisions, investigations, API quirks, and patterns — so agents recall context instead of re-deriving it, keeping token usage low. Includes Graphify knowledge graphs for semantic search and impact analysis.
+An Obsidian vault that gives Claude Code and Codex persistent memory across sessions. Stores project knowledge — decisions, investigations, API quirks, and patterns — so agents recall context instead of re-deriving it, keeping token usage low. Includes Graphify knowledge graphs for semantic search and impact analysis.
 
-Each project gets its own folder with typed notes (specs, decisions, knowledge, investigations). Claude reads only what it needs per session. At the end of a session, `/obsidian-audit` captures what's worth keeping as atomic notes linked from the project hub.
+Each project gets its own folder with typed notes (specs, decisions, knowledge, investigations). The active agent reads only what it needs per session. At the end of a session, `/obsidian-audit` captures what's worth keeping as atomic notes linked from the project hub.
 
 ## Getting Started
 
@@ -17,9 +17,9 @@ Each project gets its own folder with typed notes (specs, decisions, knowledge, 
 git clone https://github.com/vincesn/claude-obsidian-vault ~/Obsidian/Claude
 ```
 
-### 2. Point Claude Code at it
+### 2. Point your coding agent at it
 
-Add this to your `~/.claude/CLAUDE.md`:
+Add this to `~/.claude/CLAUDE.md` for Claude Code and/or `~/.codex/AGENTS.md` for Codex:
 
 ```markdown
 # Vault Recall
@@ -44,21 +44,21 @@ Projects/
 
 ### 4. Capture knowledge after a session
 
-At the end of any Claude Code session, run:
+At the end of any Claude Code or Codex session, run:
 
 ```
 /obsidian-audit
 ```
 
-Claude will synthesize what's worth keeping into atomic notes and link them from the project hub.
+The agent will synthesize what's worth keeping into atomic notes and link them from the project hub.
 
 ### 5. Use Graphify for codebase queries
 
-If a project has a `graphify-out/` directory, Claude will consult the knowledge graph before reading files — for architecture questions, impact analysis, and locating where something happens.
+If a project has a `graphify-out/` directory, Claude Code or Codex will consult the knowledge graph before reading files — for architecture questions, impact analysis, and locating where something happens.
 
 ## Skills
 
-Five slash commands are bundled with this vault. Install them once via `Templates/How to Setup.md` → Machine setup Step 9; they live in `~/.claude/skills/`.
+Five skills are bundled with this vault. Install them once via `Templates/How to Setup.md` → Machine setup Step 9; they live in `~/.claude/skills/` for Claude Code or `~/.agents/skills/` for Codex.
 
 | Skill | Trigger | What it does |
 |---|---|---|

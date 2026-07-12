@@ -39,13 +39,13 @@ If a candidate note fails any one of these, skip it.
 - A bug's root cause identified this session (the *why*, not the fix — fix is in git) → `knowledge/`
 - A non-obvious constraint explicitly stated ("never do X because…") → `decisions/` or `knowledge/`
 - How a feature/system behaves as built, when that behavior is surprising or non-obvious → `specs/`
-- A finalized plan or roadmap — what was decided and how → `plans/`
+- A finalized PRD, plan, or roadmap — what was decided and how → `plans/`
 - An issue investigated this session — symptom, ruled-out hypotheses, root cause, resolution (or current state if open) → `investigations/`
 
 **Skip:**
 - Anything not explicitly stated in this session — no filling gaps, no reasonable assumptions, no "probably" or "likely"
 - Obvious facts any developer would infer from reading the code
-- In-progress / half-finished state — but a finalized plan/roadmap document is *not* "half-finished"; it belongs in `plans/` (exception: an unresolved investigation is savable as `status: open`)
+- In-progress / half-finished state — but a finalized PRD, plan, or roadmap document is *not* "half-finished"; it belongs in `plans/` (exception: an unresolved investigation is savable as `status: open`)
 - Anything already in the repo's CLAUDE.md or git history
 - Mechanical steps documented elsewhere
 - Ephemeral conversation detail (debugging attempts, intermediate outputs, throwaway commands)
@@ -83,7 +83,7 @@ One concept per note. **Pick the type folder by purpose** (see FORMAT.md → Not
 | `decisions/` | stakeholder rulings, architectural decisions/constraints, "why X" | `decision` |
 | `knowledge/` | reusable lessons | `gotcha` `pattern` `api-quirk` `bug` |
 | `reference/` | external lookup facts (endpoints, creds, pricing, links) | `reference` |
-| `plans/` | implementation plans, feature plans, roadmaps | `plan` |
+| `plans/` | PRDs, implementation plans, feature plans, roadmaps | `plan` |
 | `investigations/` | Issue investigations | `investigation` |
 
 If it's a **multi-part feature** (report sections, API endpoints, pipeline stages), follow FORMAT.md's *Documenting a Multi-Part Feature* pattern under `specs/<topic>/`: numbered index + one atomic note per part + shared cross-cutting notes — don't write one big note. Decisions never go in a spec folder — put them in `decisions/` and link.
