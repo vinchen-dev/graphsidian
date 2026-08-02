@@ -10,6 +10,60 @@ updated: 2026-07-12
 
 Version history for [[graphify-obsidian-setup]]. Registry: [[VERSIONS]].
 
+### 1.8.0 — 2026-08-02
+- **Restructured into the single self-contained agent runbook.** [[graphify-obsidian-setup]] is now the sole
+  document an agent needs: the machine-level pieces that used to live in [[How to Setup]] (installing the
+  bundled `obsidian-*` skills into the user skill dir; adding the global graph-first + trigger directives) are
+  folded in as Steps 1–2, and the old "Skip map" / back-references to the manual scaffolder were removed.
+- **Setup responsibility split clarified.** Manual software install (Obsidian + CLI, `uv` + `graphify`,
+  `graphify install`) is now owned entirely by `README.md`; per-project wiring is a single agent prompt in
+  [[How to Setup]] that points here. The agent does all skill/directive/project setup itself.
+- **`/graphify` skill sourcing corrected.** It is registered by `graphify install` (Graphify's own installer),
+  **not** bundled in `Templates/skills/`. Docs no longer reference a bundled `graphify` skill; the real bundled
+  set is `obsidian-setup`, `obsidian-audit`, `obsidian-recall`, `obsidian-format-update`, and
+  `obsidian-migrate-projects` (below). Removed the broken instruction to copy a bundled `graphify` skill out of
+  the vault.
+- **Hardened for any agent + any vault location.** The handoff prompt in [[How to Setup]] is now
+  self-bootstrapping — it discovers the vault by **content** (`FORMAT.md` + `Projects/`) via the Obsidian CLI,
+  common paths, or a recursive filesystem search, so the user never needs to know the vault path. Step 0 gained
+  an explicit bounded recursive-search fallback and a note that the vault folder may be named anything. Steps
+  1–2 are now agent-neutral: identify which agent you are and install into *its* user-level locations, with a
+  "tell the user which files to add" fallback for agents that have no skill mechanism.
+- **Added a bundled `obsidian-setup` skill (`/obsidian-setup`)** as a one-word entry point that reruns this
+  runbook — brings the bundled-skill count to **five**. The pasted prompt remains the bootstrap for the first
+  project on a machine / agents without skills; `/obsidian-setup` is the fast path thereafter. Added
+  top-of-README + top-of-How-to-Setup quickstarts pointing at both paths.
+- **`obsidian-migrate-projects` made portable, trigger matches its name.** It was previously invoke-by-name with
+  hardcoded `/Users/vince/Obsidian/Claude/...` paths that broke on any other machine. It now resolves the vault
+  by content (Step 0), carries bash **and** PowerShell command variants, references `/obsidian-setup` instead of
+  the retired `graphify-obsidian-init` scaffolder, and is registered as an `/obsidian-migrate-projects` trigger
+  block in Step 2 — trigger and skill name are the same, no alias to remember. This is the one-word way to bring
+  an outdated vault's projects up to date after a format/setup bump.
+- **Merged `obsidian-init` into `obsidian-setup`.** The codebase-scan procedure (what to scan, what to fill,
+  anti-hallucination rules, three-test bar, note template, confirm-before-saving) moved verbatim into the
+  runbook's **Step 8**, so both entry points get it: the `/obsidian-setup` skill and the pasted prompt.
+  `/obsidian-init` no longer exists as a separate trigger — setup now populates the vault itself. A **re-scan
+  mode** preserves the one capability that would otherwise be lost: run Step 8 alone to refresh derived notes
+  after big code changes, without redoing the graph, hook, or skill installs.
+- **Deleted the retired `Templates/bin/graphify-obsidian-init` scaffolder** (and its now-empty `bin/` dir), and
+  cleaned its dangling references out of the `obsidian-format-update` skill. The agent-driven runbook creates the
+  folders + hub directly, so the separate 0-token scaffolder script was dead weight.
+- Additive/clarifying — no change to correctly-wired projects. Bump hub `setup_version` to `"1.8.0"`
+  opportunistically; nothing to re-wire.
+
+**Migration (1.8.0):**
+- [ ] Re-run manual install Step 4 (`graphify install`) if you previously relied on a copied bundled `graphify`
+      skill that no longer exists.
+- [ ] Ensure the five bundled skills (`obsidian-setup`, `obsidian-audit`, `obsidian-recall`,
+      `obsidian-format-update`, `obsidian-migrate-projects`) are present in your agent's skill dir (the
+      per-project setup installs them, idempotently).
+- [ ] Delete any installed `obsidian-init` skill folder and its `/obsidian-init` trigger block — it is merged
+      into `obsidian-setup`.
+- [ ] If you installed an earlier preview of this version, delete any installed `setup-project` skill folder
+      and rename its trigger block to `obsidian-setup`; likewise rename the `obsidian-migrate-projects` trigger
+      from `/update-project` to `/obsidian-migrate-projects`.
+- [ ] Bump hub `setup_version` to `"1.8.0"` when convenient — no wiring changes needed.
+
 ### 1.7.1 — 2026-07-12
 - Updated the bundled `obsidian-audit` skill to classify finalized PRDs as active `plan` notes under
   `plans/`.

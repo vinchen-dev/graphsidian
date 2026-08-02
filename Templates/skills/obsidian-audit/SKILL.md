@@ -7,13 +7,18 @@ description: Use ONLY when the user types /obsidian-audit — persists what's wo
 
 Persist durable knowledge from this session into the Obsidian second-brain vault.
 
-**Locating the vault:** resolve the path at runtime from the running Obsidian instance — never from an env var or a remembered path:
+**Locating the vault:** resolve the path at runtime — never from an env var or a remembered path. The vault root is the folder containing **both** `FORMAT.md` and a `Projects/` subfolder; identify it by that content, not by its name. Try in order, and verify `FORMAT.md` exists before using any result:
 
-```bash
-obsidian vault="Claude" eval code="app.vault.adapter.basePath"
-```
+1. **Running Obsidian, CLI enabled** (most current — survives a moved vault):
+   ```bash
+   obsidian vault="Claude" eval code="app.vault.adapter.basePath"
+   ```
+   Strip the leading `=> `. If the vault isn't named `Claude`, adjust `vault=` or fall through.
+2. **Common locations:** `~/Obsidian/Claude`, `~/Desktop/Claude`, `~/Documents/Claude` — first one holding `FORMAT.md` + `Projects/` wins.
+3. **Bounded recursive search** under the user's home for a `FORMAT.md` sitting beside a `Projects/` folder.
+4. **Still nothing — ask the user** for the vault-root path. Never guess, and never create a new vault.
 
-The returned absolute path is `<vault>` in everything below. If the command fails, Obsidian isn't running — tell the user to open Obsidian and stop; do not guess the path.
+The resolved absolute path is `<vault>` in everything below.
 
 **FIRST: read `<vault>/VERSIONS.md`** — it holds the current version numbers to stamp into frontmatter (`format_version` ← FORMAT.md, and the hub's `setup_version` ← graphify-obsidian-setup.md). For a routine capture, do **not** read FORMAT.md — the folder table and templates embedded below are kept in sync with it and are sufficient. Read `<vault>/FORMAT.md` (source of truth; wins on any conflict) only when: (1) creating a new project hub, (2) using the multi-part spec pattern (`specs/<topic>/`) for the first time in a project, or (3) anything conflicts with these embedded rules or you are otherwise uncertain how to structure a note.
 
@@ -87,6 +92,8 @@ One concept per note. **Pick the type folder by purpose** (see FORMAT.md → Not
 | `investigations/` | Issue investigations | `investigation` |
 
 If it's a **multi-part feature** (report sections, API endpoints, pipeline stages), follow FORMAT.md's *Documenting a Multi-Part Feature* pattern under `specs/<topic>/`: numbered index + one atomic note per part + shared cross-cutting notes — don't write one big note. Decisions never go in a spec folder — put them in `decisions/` and link.
+
+The same grouping applies to **many related ADRs**: once one theme in `decisions/` passes ~5 notes, group them under `decisions/<topic>/` with a `<topic>-00-index.md` (FORMAT.md → *Topic Grouping*), so the hub carries one router line instead of many. `specs/` and `decisions/` are the only folders that may nest — `knowledge/`, `reference/`, `plans/`, `investigations/` stay flat.
 
 Write `Projects/<project>/<folder>/<slug>.md` (slug = 2–4 kebab words):
 ```markdown

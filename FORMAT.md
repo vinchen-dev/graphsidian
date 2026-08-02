@@ -1,11 +1,11 @@
 ---
 tags:
   - meta
-format_version: "2.5.0"
-updated: 2026-07-06
+format_version: "2.6.0"
+updated: 2026-08-02
 ---
 
-# Project Format — v2.5.0
+# Project Format — v2.6.0
 
 The **single source of truth** for how every project is structured in this vault. The `/obsidian-audit` skill follows this file. Change the format here, bump the version, log it in the [Changelog](#changelog), then migrate existing projects (see [Migrating](#migrating)).
 
@@ -34,6 +34,9 @@ Projects/<project>/
       <topic>-NN-<part>.md
   decisions/            # decisions, ADRs, architectural constraints, "why X"
     <slug>.md
+    <topic>/            # many related ADRs → topic subfolder (see Multi-Part)
+      <topic>-00-index.md
+      <topic>-NN-<part>.md
   knowledge/            # reusable lessons: gotchas, patterns, api-quirks, bug root-causes
     <slug>.md
   reference/            # external lookup facts: endpoints, credentials, pricing, doc links
@@ -46,7 +49,9 @@ Projects/<project>/
                         # rebuilt automatically by post-commit hook — never edit manually
 ```
 
-One project = one folder. Inside it, notes are separated by **type folder** (below). Create a type folder only when it has a note — don't pre-create empty ones. Tiny projects may keep a few notes flat beside the hub until a type accumulates enough to warrant its folder.
+One project = one folder. Inside it, notes are separated by **type folder** (below).
+
+**The six standard type folders are scaffolded at setup** (see [[graphify-obsidian-setup]] → Step 4) — an empty one is expected on a new project and is not a defect. The "create it only when it has a note" rule applies to **optional nesting**: don't pre-create `specs/<topic>/` or `decisions/<topic>/` subfolders before they have notes. Tiny projects may keep a few notes flat beside the hub until a type accumulates enough to warrant its folder.
 
 ## Note Types & Folders
 
@@ -75,11 +80,13 @@ The note's primary tag matches its folder's domain. When a note could fit two fo
 
 ## Topic Grouping (multi-part features)
 
-When one area of `specs/` grows past ~5 notes, group them in a topic subfolder named for the feature (e.g. `specs/audit-report/`). This is the **only** place a second level of nesting is allowed: `specs/<topic>/`. Don't nest topics inside topics, and don't sub-folder `decisions/`, `knowledge/`, or `reference/` — those stay flat.
+When one area of `specs/` or `decisions/` grows past ~5 related notes, group them in a topic subfolder named for the feature or theme (e.g. `specs/audit-report/`, `decisions/infra/`). These are the **only** two places a second level of nesting is allowed: `specs/<topic>/` and `decisions/<topic>/`. Don't nest topics inside topics, and don't sub-folder `knowledge/`, `reference/`, `plans/`, or `investigations/` — those stay flat.
+
+Grouping exists to protect the hub: a topic subfolder collapses many router lines into **one** (`[[<topic>-00-index]] — <hook>`), so the hub stays a lean router as a project accumulates notes. Whatever prose you were tempted to add to the hub to introduce the group belongs in the index note instead.
 
 ### Documenting a Multi-Part Feature
 
-When capturing something made of many parts — report sections, API endpoints, pipeline stages, config flags, state-machine states — use **index + atomic parts**:
+When capturing something made of many parts — report sections, API endpoints, pipeline stages, config flags, state-machine states, or a set of related ADRs — use **index + atomic parts**:
 
 1. **One index note** holds the *overview* — the full list/order of parts and rules spanning all of them. It links to each part.
 2. **One atomic note per part**, holding only that part's rules — so reading one part loads ~one part's tokens, not the whole feature.
@@ -119,7 +126,7 @@ project: <project>
 date: <YYYY-MM-DD>            # started
 status: open                  # open | resolved
 resolved:                     # <YYYY-MM-DD> when resolved
-format_version: "2.3.0"
+format_version: "<current, from VERSIONS.md>"
 ---
 
 # <Symptom as title — e.g. "Not allow to split, check setting" on GCash deposit>
@@ -169,8 +176,8 @@ tags:
 project: <project>
 status: active            # active | paused | archived
 repo: <absolute-path-to-code>
-format_version: "2.2.0"   # which FORMAT.md (note structure) this project follows
-setup_version: "1.3.0"    # which graphify-obsidian-setup.md the project's wiring was built against
+format_version: "<current FORMAT.md version, from VERSIONS.md>"      # which note structure this project follows
+setup_version: "<current graphify-obsidian-setup.md version, from VERSIONS.md>"  # which wiring procedure built it
 ---
 
 # <project>
@@ -186,6 +193,7 @@ setup_version: "1.3.0"    # which graphify-obsidian-setup.md the project's wirin
 
 ### Decisions (`decisions/`)
 - [[<slug>]] — <hook>
+- [[<topic>-00-index]] — <hook for a grouped ADR set, if the topic was foldered>
 
 ### Knowledge (`knowledge/`)
 - [[<slug>]] — <hook>
@@ -224,7 +232,7 @@ tags:
   - <tag>                 # spec | decision | gotcha | pattern | api-quirk | bug | reference | plan | investigation
 project: <project>
 date: <YYYY-MM-DD>
-format_version: "2.2.0"   # the current version of this file (keep in step with the hub template above)
+format_version: "<current, from VERSIONS.md>"   # the FORMAT version this note follows
 ---
 
 # <Title>
@@ -239,7 +247,7 @@ See also: [[<project>]]
 ## Rules
 
 - **Atomic.** One concept per note. If a note grows two topics, split it. *Exception: investigation notes are intentionally multi-section (see [Investigation Notes](#investigation-notes)) — do not split them.*
-- **Type-foldered.** Every note lives in the type folder matching its purpose (`specs/` `decisions/` `knowledge/` `reference/` `plans/` `investigations/`). Decisions never live inside a spec folder — link them instead. All type folders except `specs/` stay flat (no subfolders) — `investigations/` is flat like `decisions/`.
+- **Type-foldered.** Every note lives in the type folder matching its purpose (`specs/` `decisions/` `knowledge/` `reference/` `plans/` `investigations/`). Decisions never live inside a spec folder — link them instead. Only `specs/` and `decisions/` may nest one level (`<topic>/`); `knowledge/`, `reference/`, `plans/`, and `investigations/` stay flat.
 - **Hub is a router, kept lean (≤ ~400 words; large projects scale).** Baseline budget: ~400 words for a typical project. A project that routes many multi-part topics may add ~1 hub line per additional routed `…-00-index` (or topic subsection) beyond the baseline — more notes justify more *router lines*, never more content. The hard rule is size-independent: the hub holds hooks, never content. If a hub exceeds its budget, the excess belongs in a note (or a new `…-00-index`), not the hub.
 - **High-signal hooks.** Every hub entry's hook states what the note *answers* (`[[note]] — <the question/fact it resolves>`), specific enough that an agent picks the right note without opening others. Vague hooks ("misc notes") defeat cheap recall.
 - **Always linked.** Every note has a `See also: [[<project>]]` line and is listed under the matching hub subsection. No orphan notes.
@@ -268,6 +276,11 @@ When this file's version changes:
 4. A project is fully migrated when its hub and all notes match the current version.
 
 ## Changelog
+
+### 2.6.0 — 2026-08-02
+- **Topic grouping extended to `decisions/`.** A `decisions/<topic>/` subfolder (index + atomic parts, same pattern as `specs/<topic>/`) is now allowed when one theme grows past ~5 related notes — e.g. 14 infra ADRs collapsing to a single `[[infra-00-index]]` hub line. Previously only `specs/` could nest, so ADR-heavy projects pushed the hub over its word budget with flat router lines plus introductory prose. `knowledge/`, `reference/`, `plans/`, `investigations/` remain flat.
+- **Clarified the "don't pre-create empty folders" rule** — it applies to optional `<topic>/` nesting, not to the six standard type folders, which are scaffolded at setup. Resolves a contradiction with the setup runbook, which creates all six.
+- Additive — MINOR. Existing flat `decisions/` notes stay valid; regroup a project only when its hub is over budget.
 
 ### 2.5.0 — 2026-07-06
 - **Plan notes gained a lifecycle:** frontmatter `status: active | done` plus `completed: <YYYY-MM-DD>` when done. Completed plans keep their hub entry with a `(done)` marker appended; active plans stay unmarked. `/obsidian-audit` proposes the flip on explicit session evidence only.

@@ -3,348 +3,74 @@ tags:
   - meta
   - howto
 format_version: "2.2.0"
-mirrors_setup: "1.7.1"     # human mirror of graphify-obsidian-setup.md (this doc has no independent version; keep in step)
-updated: 2026-07-12
+mirrors_setup: "1.8.0"     # human mirror of graphify-obsidian-setup.md (this doc has no independent version; keep in step)
+updated: 2026-08-02
 ---
 
 # How to Setup — Graphify + Obsidian on a New Project
 
-**What this system does:** graphify indexes your codebase into a semantic knowledge graph so Claude Code or Codex can answer architecture questions ("what calls X?", "trace flow through Y") without reading every file. Obsidian is the vault where you store the human side — decisions, gotchas, plans, and "why" context that graphify doesn't capture. Together they form a two-layer knowledge system: the graph for code structure (WHAT/HOW), the vault for reasoning (WHY).
+> [!tip] Two ways to run this
+> - **Machine already set up?** Just open your agent in the new repo and type **`/obsidian-setup`** — the bundled skill runs everything below. This is the fast path for every project after your first.
+> - **First project on this machine, or an agent without skills?** Paste [the prompt](#the-prompt) below — it bootstraps everything, including installing the `/obsidian-setup` skill for next time.
 
-Step-by-step to wire this onto a project. For the *why* and the manual/adapt path, see [[graphify-obsidian-setup]].
+**One prompt. Give it to any agent (Claude Code, Codex, …) opened in the repo you want to wire.** The agent
+reads the self-contained runbook [[graphify-obsidian-setup]] and does everything: installs the bundled vault
+skills, adds the global directives, discovers the vault, builds the graph, wires the commit hook, creates the
+project hub, and populates it. You don't run a pile of commands — you paste this and let the agent work.
 
-**Per new project:** do **Phase 1 (manual scaffold — free)** then **Phase 2 (AI build — the only token cost)**. First time on a machine, do the one-time **Machine setup** to install the toolchain.
-
----
-
-## Machine setup (one-time per PC — install + configure the toolchain)
-
-Assumes a **clean PC** — nothing installed yet, no vault present. Do this once, in order (later items copy files out of the vault, so the vault has to come first). Versions verified on the reference machine in parentheses.
-
-> [!info] Platform notes
-> **macOS / Linux:** all steps run as written in Terminal.
-> **Windows (native):** use PowerShell 7+ for all commands. The scaffolder script (Step 6) is bash-only — Windows users skip it and use the Git Bash or manual fallback noted in Phase 1 Step 1. Git hooks run fine on Windows because Git for Windows bundles bash.
-
-**1. Install an agent — Claude Code, Codex, or both.** Every `/graphify`, `/obsidian-audit`, and skill invocation happens inside one of these agent sessions.
-
-> **Claude Code** — install from https://claude.ai/code or with npm
-```bash
-npm install -g @anthropic-ai/claude-code
-claude --version   # confirm it's installed and on PATH
-```
-
-> **Codex** — install from https://developers.openai.com/codex/cli/ or with npm
-```bash
-npm install -g @openai/codex
-codex --version    # confirm it's installed and on PATH
-```
-
-Install both if you want the same vault and Graphify workflow available from either agent.
-
-**2. Python 3.10+ and `uv`** (uv installs and manages graphify).
-
-> **macOS**
-```bash
-brew install uv
-```
-
-> **Linux**
-```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
-```
-
-> **Windows (PowerShell)**
-```powershell
-powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
-```
-
-> **All platforms** — verify install
-```bash
-uv --version             # (verified: uv 0.11.21, Python 3.13)
-```
-
-**3. graphify** — the graph engine. PyPI package is `graphifyy` (double-y); the CLI is `graphify`.
-
-> **All platforms**
-```bash
-uv tool install graphifyy
-graphify --help               # confirm it's on PATH  (verified: graphify 0.8.39)
-```
-
-PATH note: uv adds the tools bin to PATH automatically. If `graphify` isn't found, restart your terminal. Manual fix:
-- **macOS / Linux:** ensure `~/.local/bin` is in `$PATH`
-- **Windows:** ensure `%APPDATA%\uv\bin` is in your `Path` environment variable
-
-To upgrade later: `uv tool upgrade graphifyy`.
-
-**4. Locate your vault root — `<VAULT-ROOT>`.** This is the folder that holds **`FORMAT.md` + a `Projects/` subdir** (usually beside an `.obsidian/` folder). Every command below writes `<VAULT-ROOT>` as a placeholder — **substitute your actual path** (the same way you substitute `<PROJECT>` / `<REPO>`). No environment variable is required.
-
-Known roots (hints, not defaults):
-
-| Setup | `<VAULT-ROOT>` |
-|---|---|
-| macOS (default) | `~/Obsidian/Claude` |
-| macOS (iCloud) | `~/Library/Mobile Documents/iCloud~md~obsidian/Documents/Claude` |
-| One Windows box | `C:\Users\vince\Desktop\Claude` |
-
-> [!tip] Optional convenience — a shell variable so commands paste verbatim
-> Substituting `<VAULT-ROOT>` in every command is tedious. If you prefer, set a shell variable for this
-> session and paste `$VAULT` in its place:
-> ```bash
-> VAULT="$HOME/Obsidian/Claude"   # bash/zsh — your actual vault root
-> ```
-> ```powershell
-> $VAULT = "$HOME\Obsidian\Claude"   # PowerShell
-> ```
-> This is a **convenience only** — the vault *path* is the source of truth, not any variable. With Obsidian
-> open you can always resolve it live: `obsidian vault="Claude" eval code="app.vault.adapter.basePath"`.
-> (The legacy `CLAUDE_VAULT` env var is deprecated — don't set or rely on it.)
-
-**5. Obsidian + the vault** (do this before items 6 & 9 — they copy bundled files out of it). Install the Obsidian app (https://obsidian.md), then sync/restore your vault to your `<VAULT-ROOT>` path, then "Open folder as vault". Claude Code and Codex read/write the vault over the **filesystem** — no Obsidian plugin required.
-
-> **macOS / Linux**
-```bash
-ls "<VAULT-ROOT>"   # confirm vault is present (should show FORMAT.md, Projects/, Templates/, etc.)
-```
-
-> **Windows (PowerShell)**
-```powershell
-ls "<VAULT-ROOT>"   # confirm vault is present
-```
-
-**6. `graphify-obsidian-init`** — the one-command scaffolder (used in Phase 1). It's a **personal helper script**, not part of graphify, and it's bundled in the vault. Copy it to your local bin and make it executable:
-
-> **macOS / Linux**
-```bash
-cp "<VAULT-ROOT>/Templates/bin/graphify-obsidian-init" ~/.local/bin/
-chmod +x ~/.local/bin/graphify-obsidian-init
-graphify-obsidian-init --help   # confirm it runs and is on PATH
-```
-
-> **Windows (native):** this script is bash-only, so install and run it from **Git Bash** — open **"Git Bash"** from the Start menu. Do **not** use `bash` from PowerShell/CMD: on Windows that launches **WSL**, a separate Linux VM with different `/mnt/c/...` paths and its own filesystem. Git Bash instead maps your drive as `/c/...` and integrates with native Git. One-time install (run inside Git Bash):
-> ```bash
-> # local bin on PATH, persisted in ~/.bashrc. Use a /c/... style path for your
-> # vault root (Git Bash maps C:\ as /c/) to avoid backslash issues in cp.
-> VAULT="/c/Users/<you>/Desktop/Claude"          # your <VAULT-ROOT>, in /c/... form
-> echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
-> source ~/.bashrc
-> # install the scaffolder
-> mkdir -p ~/.local/bin
-> cp "$VAULT/Templates/bin/graphify-obsidian-init" ~/.local/bin/
-> chmod +x ~/.local/bin/graphify-obsidian-init
-> graphify-obsidian-init --help   # confirm it runs and is on PATH
-> ```
-> Also confirm `graphify` itself is reachable inside Git Bash (`command -v graphify`) — the git hook the scaffolder installs calls `graphify` by name. If it's missing, add its directory to PATH in `~/.bashrc` the same way.
-> Prefer not to use Git Bash? **Skip this step** and use the PowerShell fallback in Phase 1 Step 1 (let your agent scaffold).
-
-> If the script is ever missing, the manual steps in [[graphify-obsidian-setup]] reproduce exactly what it does — you can run those instead (see Phase 2's fallback note).
-
-**7. Extraction backend.** graphify's semantic pass (docs/PDFs) uses **subagents from the active Claude Code or Codex session by default**. If `GEMINI_API_KEY` / `GOOGLE_API_KEY` is set, it routes through Gemini instead; **unset it** to use the active coding agent (or `uv tool install 'graphifyy[gemini]'` if you deliberately want Gemini). The code (AST) pass is always local and 0-token regardless.
-
-**8. Global graph-first directive.** Graph-first behaviour is provided **globally**, not per-project. Add the same block below to the global instruction file for each agent you installed (create the file if needed):
-
-| Agent | macOS / Linux | Windows |
-|---|---|---|
-| Claude Code | `~/.claude/CLAUDE.md` | `%USERPROFILE%\.claude\CLAUDE.md` |
-| Codex | `~/.codex/AGENTS.md` | `%USERPROFILE%\.codex\AGENTS.md` |
-
-```markdown
-# Knowledge Graph (graph-first — only when the repo has one)
-If — and only if — the current repo contains a `graphify-out/` directory, it has a Graphify knowledge graph. In that case, before answering architecture/structure questions or grepping the tree to "find where X happens," consult the graph first:
-- Read `graphify-out/GRAPH_REPORT.md` first — god nodes, community map, suggested questions.
-- `graphify query "<question>"` — semantic search over the graph.
-- `graphify path "A" "B"` / `graphify explain "X"` / `graphify affected "X"` — shortest path / a node's neighbors / reverse-impact.
-Read raw source only once the graph has pointed you at the right files. If there is no `graphify-out/` directory, ignore this section entirely.
-```
-
-This fires **only** when a repo actually has a `graphify-out/`, so it's harmless in non-graphify projects.
-
-**9. Skills (`/obsidian-audit`, `/obsidian-init`, `/graphify`, `obsidian-format-update`, `obsidian-migrate-projects`).** These power capture/recall, graph-building, and vault maintenance. All are bundled in the vault. Copy them into each installed agent's user skill directory: Claude Code uses `~/.claude/skills/`; Codex uses `~/.agents/skills/`.
-
-> **macOS / Linux**
-```bash
-mkdir -p ~/.claude/skills
-cp -r "<VAULT-ROOT>/Templates/skills/obsidian-audit" ~/.claude/skills/
-cp -r "<VAULT-ROOT>/Templates/skills/obsidian-init" ~/.claude/skills/
-cp -r "<VAULT-ROOT>/Templates/skills/graphify" ~/.claude/skills/
-cp -r "<VAULT-ROOT>/Templates/skills/obsidian-format-update" ~/.claude/skills/
-cp -r "<VAULT-ROOT>/Templates/skills/obsidian-migrate-projects" ~/.claude/skills/
-```
-
-> **Codex — macOS / Linux**
-```bash
-mkdir -p ~/.agents/skills
-for skill in obsidian-audit obsidian-init graphify obsidian-format-update obsidian-migrate-projects; do
-  cp -r "<VAULT-ROOT>/Templates/skills/$skill" ~/.agents/skills/
-done
-```
-
-> **Windows (PowerShell)**
-```powershell
-New-Item -ItemType Directory -Force "$HOME\.claude\skills"
-Copy-Item -Recurse "<VAULT-ROOT>\Templates\skills\obsidian-audit" "$HOME\.claude\skills\"
-Copy-Item -Recurse "<VAULT-ROOT>\Templates\skills\obsidian-init" "$HOME\.claude\skills\"
-Copy-Item -Recurse "<VAULT-ROOT>\Templates\skills\graphify" "$HOME\.claude\skills\"
-Copy-Item -Recurse "<VAULT-ROOT>\Templates\skills\obsidian-format-update" "$HOME\.claude\skills\"
-Copy-Item -Recurse "<VAULT-ROOT>\Templates\skills\obsidian-migrate-projects" "$HOME\.claude\skills\"
-```
-
-> **Codex — Windows (PowerShell)**
-```powershell
-New-Item -ItemType Directory -Force "$HOME\.agents\skills"
-"obsidian-audit", "obsidian-init", "graphify", "obsidian-format-update", "obsidian-migrate-projects" | ForEach-Object {
-  Copy-Item -Recurse "<VAULT-ROOT>\Templates\skills\$_" "$HOME\.agents\skills\"
-}
-```
-
-Then add these trigger blocks after the graph-first block in each installed agent's global instruction file. Use the path matching that agent's skill directory (`~/.claude/skills/...` for Claude Code; `~/.agents/skills/...` for Codex). Claude Code explicitly invokes its Skill tool; Codex loads and follows the named skill.
-
-```markdown
-# graphify
-- **graphify** (`~/.claude/skills/graphify/SKILL.md`) - any input to knowledge graph. Trigger: `/graphify`
-When the user types `/graphify`, invoke the Skill tool with `skill: "graphify"` before doing anything else.
-
-# obsidian-audit
-- **obsidian-audit** (`~/.claude/skills/obsidian-audit/SKILL.md`) - audit a session for what's worth persisting to the Obsidian vault. Trigger: `/obsidian-audit`
-When the user types `/obsidian-audit`, invoke the Skill tool with `skill: "obsidian-audit"` before doing anything else.
-```
-
-For Codex, use this equivalent block in `~/.codex/AGENTS.md`:
-
-```markdown
-# graphify
-- **graphify** (`~/.agents/skills/graphify/SKILL.md`) - any input to knowledge graph. Trigger: `/graphify`
-When the user types `/graphify`, load and follow the `graphify` skill before doing anything else.
-
-# obsidian-audit
-- **obsidian-audit** (`~/.agents/skills/obsidian-audit/SKILL.md`) - audit a session for what's worth persisting to the Obsidian vault. Trigger: `/obsidian-audit`
-When the user types `/obsidian-audit`, load and follow the `obsidian-audit` skill before doing anything else.
-```
-
-> The bundled copies (script + skills) are **snapshots** for re-install; the live versions this machine runs are in `~/.local/bin/`, `~/.claude/skills/`, and/or `~/.agents/skills/`. If you edit one, refresh its vault copy and keep the installed agent copies in sync.
+> [!important] One-time prerequisites first
+> The agent does **not** install Obsidian or Graphify. Do the manual software install once, per machine, from
+> the vault's **`README.md`** (install Obsidian + CLI, install `uv` + `graphify`, run `graphify install`). If
+> those aren't done, the agent will stop and point you back to the README.
 
 ---
 
-Substitute `<PROJECT>` (e.g. `finance-ai`), `<REPO>` (path to the code), and `<VAULT-ROOT>` (your vault root from *Machine setup* Step 4) in the per-project steps below. `<VAULT>` is shorthand for `<VAULT-ROOT>/Projects/<PROJECT>`.
+## The prompt
+
+Open **any** agent in the project repo (`claude`, `codex`, or another), then paste this **verbatim** — it works
+no matter which agent you're using or where your vault lives, and you don't need to know the vault path:
+
+```
+Set up Graphify + Obsidian for THIS repository. Do all of it yourself — discover, install, scaffold, and
+wire — don't hand commands back to me.
+
+1. Find my Obsidian vault root: the folder that contains BOTH a `FORMAT.md` file and a `Projects/` subfolder
+   (it may be named anything — identify it by that content, not by its name). Look in this order: (a) if
+   Obsidian is running with its CLI, ask it for the vault path; (b) common spots for this OS —
+   ~/Obsidian/Claude, ~/Desktop/Claude, ~/Documents/Claude; (c) a recursive filesystem search under my home
+   for a `FORMAT.md` sitting next to a `Projects/` folder; (d) if all of those fail, ask me. Never create a
+   new vault or guess a path.
+
+2. Read `<vault-root>/Templates/graphify-obsidian-setup.md` and follow it end to end. It is self-contained
+   and tells you exactly which skills + global directives to install and how to wire this project.
+
+3. Adapt to whichever agent you are: install the skills and directives into YOUR own user-level locations
+   (Claude Code → ~/.claude/…, Codex → ~/.codex + ~/.agents/skills, or another agent's equivalent). If you
+   have no skill mechanism, tell me the exact files to add instead.
+
+Project name: this repo's folder name unless I say otherwise. Prerequisites (Obsidian, uv, graphify,
+`graphify install`) are installed per the README — if one is missing, stop and point me at the README. When
+done, report what you created and anything you skipped.
+```
+
+The prompt is self-bootstrapping: the agent discovers the vault by **content** (`FORMAT.md` + `Projects/`), so
+it works on any machine and any vault location, and it adapts to whichever agent runs it.
 
 ---
 
-The flow is two phases on purpose — **do all the deterministic work manually first (free), then bring in the AI only for the build.** That keeps token spend to the single step that genuinely needs it.
+## What the agent will do (so you know what "done" looks like)
 
-## Phase 1 — Manual scaffold (do it yourself — deterministic, **0 AI tokens**)
+Driven entirely by [[graphify-obsidian-setup]]:
 
-Plain terminal work; no agent session, no tokens. Get the project fully wired before spending anything on the AI.
-
-### Step 1. Scaffold the vault + hooks
-
-> **macOS / Linux**
-```bash
-cd <REPO>
-graphify-obsidian-init <PROJECT>
-
-# Example:
-cd ~/Desktop/Projects/finance-ai
-graphify-obsidian-init finance-ai
-```
-
-> **Windows (native) — two options (pick one):**
-> - **Git Bash (recommended):** open **"Git Bash"** from the Start menu (not `bash` in PowerShell — that's WSL). `cd` to your repo using a `/c/...` path, then run the scaffolder:
->   ```bash
->   cd /c/Users/<you>/Desktop/Projects/<PROJECT>
->   graphify-obsidian-init <PROJECT>
->   ```
->   Requires the one-time Git Bash install in *Machine setup* Step 6.
-> - **Fallback (PowerShell):** skip the script entirely and let Claude Code or Codex scaffold it — in Phase 2, give the agent the AI guide (see fallback note in Step 3).
-
-Scaffolds the vault, installs the git hooks (**post-commit** + **post-checkout** — both 0-token rebuilds),
-and patches post-commit to export into Obsidian. It creates the project **hub** with both version fields
-stamped — `format_version` (current [[FORMAT]]) and `setup_version` (current [[graphify-obsidian-setup]],
-see [[VERSIONS]]), and a `knowledge/git-hook-graphify.md` gotcha note. Look for:
-- `✓ vault folders ready`
-- `✓ created knowledge note …git-hook-graphify.md`
-- `✓ graphify hook installed`
-- `✓ patched hook → exports into Obsidian on each commit`
-
-> [!warning] If it says `no '_rebuild_code(' anchor` or `hook patch failed`
-> graphify's hook layout changed — do the manual hook edit in **Step 4** of [[graphify-obsidian-setup]].
-
-### Step 2. Gitignore the engine folder + tune the corpus
-
-> **macOS / Linux**
-```bash
-grep -qxF 'graphify-out/' .gitignore || { echo '' >> .gitignore; echo 'graphify-out/' >> .gitignore; }
-```
-
-> **Windows (PowerShell)**
-```powershell
-if (-not (Select-String -Path .gitignore -Pattern 'graphify-out/' -Quiet 2>$null)) { Add-Content .gitignore "`ngraphify-out/" }
-```
-
-`graphify-out/` is a build artifact (graph.json + cache) — keep it out of git.
-
-Then create a **`.graphifyignore`** at the repo root so the graph skips noise (big UI bundles, build output,
-downloaded assets, generated files). Start from this and adjust for the repo:
-
-```
-# .graphifyignore
-node_modules/
-dist/
-build/
-public/
-*.log
-graphify-out/
-```
-
-## Phase 2 — AI build (in Claude Code or Codex — the **only** token-spending part)
-
-Now open either Claude Code or Codex in `<REPO>` (`claude` or `codex` from the repo directory, or the corresponding desktop app). Phase 1 did all the deterministic wiring for free; the AI is needed only for the semantic graph build.
-
-### Step 3. Open your coding agent
-
-Open Claude Code or Codex in `<REPO>`. The graph build and vault population happen in Step 5 when you give the agent the AI guide — nothing to run here yet.
-
-> **No per-project instruction-file step.** Graph-first behaviour comes from the global `CLAUDE.md` (Claude Code) or `AGENTS.md` (Codex) directive from *Machine setup*, which auto-applies to any repo that has a `graphify-out/`.
-
-> [!note] Use the active agent's subagents, not Gemini
-> If `GEMINI_API_KEY` / `GOOGLE_API_KEY` is set, graphify routes semantic extraction through Gemini. Unset it first to use Claude Code or Codex subagents instead (Step 5 triggers the build).
-
-### Step 4. Verify
-
-Make a trivial commit, then check the hook log (the hook runs in the background — give it a few seconds):
-
-> **macOS / Linux**
-```bash
-tail ~/.cache/graphify-rebuild.log
-```
-
-> **Windows (PowerShell)**
-```powershell
-Get-Content "$HOME\.cache\graphify-rebuild.log" -Tail 10
-```
-
-Expect both lines to appear:
-```
-[graphify hook] N file(s) changed - rebuilding graph...
-[graphify hook] Obsidian vault updated -> <VAULT>/graphify-auto/
-```
-
-> [!warning] If the log is empty or shows no "Obsidian vault updated" line
-> 1. Check the hook is executable: `ls -l <REPO>/.git/hooks/post-commit` — should show `-rwxr-xr-x`
-> 2. Check graphify is on PATH inside the hook's environment: `which graphify`
-> 3. Re-run `graphify-obsidian-init <PROJECT>` (it's idempotent) to re-patch the hook
-> 4. As a manual fallback: `cd <REPO> && graphify update . && graphify export obsidian --dir "<VAULT>/graphify-auto/"`
-
-### Step 5. Run the AI build + initial vault scan
-
-Open Claude Code or Codex in `<REPO>` and give it the AI guide. Because Phase 1's scaffolder already created the vault, hub, and hook, tell the agent to skip those steps:
-
-```
-Read <VAULT-ROOT>/Templates/graphify-obsidian-setup.md. The scaffolder already ran (vault folders, hub, and hook are done). Start at Step 2 (build graph), then continue from Step 5 onward. Project name: <PROJECT>.
-```
-
-> **Windows / scaffolder skipped:** if Phase 1 used the fallback instead, omit the "scaffolder already ran" sentence — the agent will follow all steps from Step 1.
-
-The agent will build the graph, add the hub Graph section, create the gotcha note, and run `/obsidian-init` to populate the vault with initial specs, knowledge, and reference notes.
+1. **Resolve the vault root** and verify the README prerequisites are installed.
+2. **Install the five bundled vault skills** (`obsidian-setup`, `obsidian-audit`, `obsidian-recall`,
+   `obsidian-format-update`, `obsidian-migrate-projects`) into the agent's user skill directory, and ensure the
+   global graph-first + trigger directives are present. Idempotent — already-installed pieces are skipped.
+   (After this, `/obsidian-setup` is available for your next project.)
+3. **Wire the current project**: gitignore + `.graphifyignore`, build the graph (`/graphify`), install and patch
+   the post-commit hook so it re-exports into Obsidian, create the project hub, and scan the codebase to
+   populate `specs/` `knowledge/` `reference/` and fill the hub (it asks for approval before writing notes).
+4. **Verify** the hook fires and the vault export lands, then report back.
 
 ---
 
@@ -354,9 +80,10 @@ The agent will build the graph, add the hub Graph section, create the gotcha not
 |-----------|---------|
 | "What calls X? / trace flow through Y" | `graphify query "<question>"` (in the repo) |
 | Keep the graph fresh (your own work) | nothing — every commit auto-updates it (zero tokens) |
-| Resync after `git pull` (teammate's code) | `graphify update .` — free AST rebuild. A pull updates the **code** but not the graph until your next commit, so run this if you need a fresh graph before then |
+| Resync after `git pull` (teammate's code) | `graphify update .` — free AST rebuild |
 | Refresh after editing **docs** (`.md`) | run `/graphify` again (code is automatic; doc concepts aren't) |
 | Persist a decision / gotcha / plan | `/obsidian-audit` |
+| Recall before debugging / deciding | `/obsidian-recall` |
 | Browse the graph | open `graphify-out/graph.html`, or `graphify-auto/` in Obsidian |
-| Add a new note type / folder to the vault format | invoke `obsidian-format-update` skill — complete file checklist so nothing is missed |
-| Migrate existing projects after a format/setup version bump | invoke `obsidian-migrate-projects` skill — hub-only bumps for MINOR changes, full migration for MAJOR |
+| Add a new note type / folder to the vault format | invoke the `obsidian-format-update` skill |
+| Bring existing projects up to date after a format/setup version bump | `/obsidian-migrate-projects` |

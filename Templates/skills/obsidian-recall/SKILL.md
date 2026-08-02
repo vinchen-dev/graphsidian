@@ -9,13 +9,18 @@ Look up durable knowledge already captured in the Obsidian second-brain vault in
 
 ## Locating the vault
 
-Resolve the vault path at runtime from the running Obsidian instance — never from an env var or a remembered path (the vault can move; the CLI always knows where it is):
+Resolve the vault path at runtime — never from an env var or a remembered path (the vault can move). The vault root is the folder containing **both** `FORMAT.md` and a `Projects/` subfolder; identify it by that content, not by its name. Try in order, verifying `FORMAT.md` exists before using any result:
 
-```bash
-obsidian vault="Claude" eval code="app.vault.adapter.basePath"
-```
+1. **Running Obsidian, CLI enabled** (most current — survives a moved vault):
+   ```bash
+   obsidian vault="Claude" eval code="app.vault.adapter.basePath"
+   ```
+   Strip the leading `=> `. If the vault isn't named `Claude`, adjust `vault=` or fall through.
+2. **Common locations:** `~/Obsidian/Claude`, `~/Desktop/Claude`, `~/Documents/Claude` — first one holding `FORMAT.md` + `Projects/` wins.
+3. **Bounded recursive search** under the user's home for a `FORMAT.md` sitting beside a `Projects/` folder.
+4. **Still nothing — ask the user** for the vault-root path. Never guess, and never create a new vault.
 
-The returned absolute path is `<vault>` in everything below. If the command fails, Obsidian isn't running — tell the user to open Obsidian and stop; do not guess the path.
+The resolved absolute path is `<vault>` in everything below.
 
 ## Core Principle
 

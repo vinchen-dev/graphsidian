@@ -2,105 +2,200 @@
 tags:
   - meta
   - template
-doc_version: "1.7.1"
-aligns_with_format: "2.4.0"
-updated: 2026-07-12
+doc_version: "1.8.0"
+aligns_with_format: "2.6.0"
+updated: 2026-08-02
 ---
 
-# Template: Wire Graphify + Obsidian on an Existing Project
+# Agent Runbook: Set up Graphify + Obsidian on a Project
 
-Reusable setup guide for adding the two-layer knowledge system (Obsidian vault for human WHY + graphify graph for machine WHAT/HOW) to any existing codebase. See also: [[FORMAT]]. Registry: [[VERSIONS]] · history: [[versions/setup]].
+**You are an agent (Claude Code, Codex, or equivalent). This document is the ONLY thing you need.**
+It is self-contained: read it top to bottom and follow it to wire the two-layer knowledge system —
+an Obsidian vault (human WHY: decisions, gotchas, plans) plus a graphify knowledge graph (machine
+WHAT/HOW: code structure) — onto the repository the user pointed you at.
+
+The user hands you one short prompt (see [[How to Setup]]); that prompt sends you here. Do not ask the
+user to run a pile of commands — you run them. Only stop to ask when this runbook explicitly says to
+(vault not found, or a missing prerequisite).
+
+See also: [[FORMAT]] (vault layout). Registry: [[VERSIONS]] · history: [[versions/setup]].
 
 > This document is versioned independently — its own `doc_version` (above), tracked in [[VERSIONS]].
 > `aligns_with_format` records which [[FORMAT]] version its vault-layout references match.
 
+---
+
+## Prerequisites — the user installs these by hand (see `README.md`)
+
+Before this runbook can succeed, the user must have completed the manual, one-time software install from
+the vault's **`README.md`**. You do **not** install this software — verify it, and if anything is missing,
+**stop and point the user at `README.md`** rather than trying to install it yourself:
+
+| Prerequisite | Check | If missing |
+|---|---|---|
+| Obsidian app + the vault synced locally | vault folder holding `FORMAT.md` + `Projects/` exists (Step 0) | Stop → README "Install Obsidian" |
+| `uv` + `graphify` on PATH | `graphify --help` succeeds | Stop → README "Install Graphify" |
+| `graphify install` has been run | `/graphify` skill is registered for the agent | Stop → README "Register Graphify" |
+
+`graphify install` is what registers the **`/graphify`** skill and graph-first behaviour — that skill is
+**not** bundled in this vault, so don't try to copy it from `Templates/skills`. This runbook installs only
+the vault's own bundled skills (Step 1) — `/graphify` is never one of them.
+
 Substitute throughout:
-- `<PROJECT>` — project name (e.g. `finance-ai`)
-- `<REPO>` — absolute path to the code (macOS `~/Desktop/Projects/<PROJECT>`, Windows `C:\Users\<you>\Desktop\Projects\<PROJECT>`)
-- `<VAULT-ROOT>` — the Obsidian vault root (the folder that holds `FORMAT.md` + `Projects/`). **Machine-specific — discover it, don't assume** (see below).
+- `<PROJECT>` — project name (e.g. `finance-ai`) — usually the repo's folder name
+- `<REPO>` — absolute path to the code you were opened in
+- `<VAULT-ROOT>` — the Obsidian vault root (the folder that holds `FORMAT.md` + `Projects/`). **Machine-specific — discover it in Step 0, don't assume.**
 - `<VAULT>` — the project's folder inside that root: `<VAULT-ROOT>/Projects/<PROJECT>`
 
-> [!important] Find the vault root — discover it, then substitute a concrete path
-> `<VAULT-ROOT>` is a **placeholder for a real absolute path** that differs per machine. Resolve it once,
-> at the start, in this order and use the result everywhere `<VAULT>` appears:
->
-> 1. **Ask the running Obsidian instance** (preferred — always current, even after the vault moves):
->    ```bash
->    obsidian vault="Claude" eval code="app.vault.adapter.basePath"
->    ```
->    Requires Obsidian to be open with the CLI enabled. Strip the leading `=> ` from the output; verify the
->    returned folder contains `FORMAT.md` before using it.
-> 2. **Otherwise search for it.** The vault root is the folder that contains **both** `FORMAT.md` and a `Projects/` subdir, and usually sits next to an `.obsidian/` folder. Probe the common locations, e.g.:
->    ```bash
->    # POSIX — first hit wins
->    for d in ~/Obsidian/Claude ~/Desktop/Claude ~/Documents/Claude \
->             ~/Documents/Obsidian/Claude "$HOME"/*/Claude; do
->      [ -f "$d/FORMAT.md" ] && [ -d "$d/Projects" ] && echo "VAULT-ROOT=$d" && break
->    done
->    ```
->    ```powershell
->    # Windows PowerShell
->    'Obsidian\Claude','Desktop\Claude','Documents\Claude','Documents\Obsidian\Claude' |
->      ForEach-Object { Join-Path $HOME $_ } |
->      Where-Object { Test-Path (Join-Path $_ 'FORMAT.md') -and (Test-Path (Join-Path $_ 'Projects')) } |
->      Select-Object -First 1
->    ```
->    (If those miss, widen to a filesystem search for a `FORMAT.md` beside an `.obsidian/` marker.)
-> 3. **If it still can't be found — ask the user for the vault-root path.** Don't guess or create a new
->    vault; a wrong path silently populates the wrong place.
->
-> Known roots so far (hints, not defaults): macOS `~/Obsidian/Claude`; one Windows box
-> `C:\Users\vince\Desktop\Obsidian\Claude`. The legacy `$CLAUDE_VAULT` env var is **deprecated** — never
-> read or set it; it goes stale when the vault moves.
-
 > [!note] Platform / shell
-> Command blocks are written for **macOS/Linux (bash)**. On Windows use PowerShell or Git Bash — Step 6
-> already lists both. Where a step embeds an **absolute path inside code** (the hook's Obsidian export in
-> Step 4, the optional report copy), substitute the *resolved* `<VAULT>` path for that machine — never a
-> literal `~/Obsidian/...`.
+> Command blocks are written for **macOS/Linux (bash)**; a **Windows (PowerShell)** variant follows where the
+> syntax differs. Where a step embeds an **absolute path inside code** (the hook's Obsidian export in Step 6),
+> substitute the *resolved* `<VAULT>` path for that machine — never a literal `~/Obsidian/...`.
 
 ---
 
-## What FORMAT.md does and does NOT cover
+## Step 0 — Resolve the vault root (do this first)
 
-| Concern | Source of truth |
-|---------|-----------------|
-| Vault folder layout, note types, hub template | `FORMAT.md` |
-| Running the extraction pipeline | `/graphify` skill |
-| Installing the post-commit rebuild hook | `graphify hook install` |
-| **Obsidian export wired into the hook** | **This template (Step 4) — not automatic** |
+`<VAULT-ROOT>` is a **placeholder for a real absolute path** that differs per machine. Resolve it once, here,
+and use the result everywhere `<VAULT>` appears. Try in order:
 
-FORMAT.md alone is not enough: it describes the vault, not the graphify pipeline or the hook wiring. Follow the steps below.
+1. **Ask the running Obsidian instance** (preferred — always current, even after the vault moves):
+   ```bash
+   obsidian vault="Claude" eval code="app.vault.adapter.basePath"
+   ```
+   Requires Obsidian open with the CLI enabled. Strip the leading `=> ` from the output; verify the returned
+   folder contains `FORMAT.md` before using it. (`vault="Claude"` assumes the default vault name — if this
+   vault is named something else, adjust the `vault=` value or just fall through to the search below, which
+   identifies the vault by content regardless of its folder name.)
+2. **Otherwise search for it.** The vault root is the folder that contains **both** `FORMAT.md` and a
+   `Projects/` subdir, usually beside an `.obsidian/` folder. Probe common locations:
+   ```bash
+   # POSIX — first hit wins
+   for d in ~/Obsidian/Claude ~/Desktop/Claude ~/Documents/Claude \
+            ~/Documents/Obsidian/Claude "$HOME"/*/Claude; do
+     [ -f "$d/FORMAT.md" ] && [ -d "$d/Projects" ] && echo "VAULT-ROOT=$d" && break
+   done
+   ```
+   ```powershell
+   # Windows PowerShell
+   'Obsidian\Claude','Desktop\Claude','Documents\Claude','Documents\Obsidian\Claude' |
+     ForEach-Object { Join-Path $HOME $_ } |
+     Where-Object { (Test-Path (Join-Path $_ 'FORMAT.md')) -and (Test-Path (Join-Path $_ 'Projects')) } |
+     Select-Object -First 1
+   ```
+   If the common-location probe misses, run a **bounded recursive search** — this finds the vault by content on
+   *any* machine, whatever the folder is named or wherever it lives:
+   ```bash
+   # POSIX — first FORMAT.md that sits beside a Projects/ folder wins
+   find "$HOME" -maxdepth 6 -type f -name FORMAT.md 2>/dev/null | while read -r f; do
+     [ -d "$(dirname "$f")/Projects" ] && echo "VAULT-ROOT=$(dirname "$f")" && break
+   done
+   ```
+   ```powershell
+   # Windows PowerShell
+   Get-ChildItem $HOME -Recurse -Depth 6 -Filter FORMAT.md -File -ErrorAction SilentlyContinue |
+     Where-Object { Test-Path (Join-Path $_.DirectoryName 'Projects') } |
+     Select-Object -First 1 -ExpandProperty DirectoryName
+   ```
+3. **If it still can't be found — ask the user for the vault-root path.** Don't guess or create a new vault;
+   a wrong path silently populates the wrong place.
+
+Known roots so far (hints, not defaults): macOS `~/Obsidian/Claude`; one Windows box
+`C:\Users\vince\Desktop\Claude`. The legacy `$CLAUDE_VAULT` env var is **deprecated** — never read or set it.
 
 ---
 
-## Quick start
+## Step 1 — Install the bundled vault skills (once per machine)
 
-### Skip map — what the scaffolder already did
+The vault bundles five skills in `<VAULT-ROOT>/Templates/skills/`. Copy them into the active agent's user
+skill directory, then register their triggers. **Idempotent — if a skill folder is already present and current,
+skip the copy.** (`/graphify` is handled by `graphify install`, not here.)
 
-If `graphify-obsidian-init` ran successfully in Phase 1 of [[How to Setup]], several steps below are already done. Use this table to know where to start:
+**First, identify which agent you are** and use its row below. The table covers Claude Code and Codex; if you
+are a **different agent**, use *your own* equivalent user-level skill directory and global instruction file
+(the analogue of the paths below). If you have **no skill mechanism at all**, install nothing in Steps 1–2 —
+instead tell the user exactly which files to add and where, then continue with the project wiring from Step 3.
 
-| Step | Skip if scaffolder ran? | Why |
+| Agent | Skill dir | Global instruction file |
 |---|---|---|
-| Output Locations → `.graphifyignore` | **Skip** | Phase 1 Step 2 already created it |
-| Step 1 — vault folders + hub | **Skip** | Script scaffolded folders and created the hub |
-| Step 2 — build graph (`/graphify`) | **Run** | Always needed — first graph build |
-| Step 3 — `graphify hook install` + export | **Skip** | Script installed and wired the hook |
-| Step 4 — patch post-commit hook | **Skip** | Script patched it |
-| Step 5 — hub Graph section + gotcha note | **Run** | Not done by script |
-| Step 5b — `/obsidian-init` vault scan | **Run** | Not done by script |
-| Step 6 — verify | **Run** (partial) | Skip the log check — Phase 2 Step 4 of [[How to Setup]] already covers it |
+| Claude Code | `~/.claude/skills/` | `~/.claude/CLAUDE.md` (Win: `%USERPROFILE%\.claude\CLAUDE.md`) |
+| Codex | `~/.agents/skills/` | `~/.codex/AGENTS.md` (Win: `%USERPROFILE%\.codex\AGENTS.md`) |
 
-**If scaffolder ran:** start at **Step 2**, then jump to **Step 5 → 5b → Step 6** (skip log check).
-**If scaffolder was skipped (Windows fallback or script unavailable):** follow all steps in order.
+The five bundled skills: **`obsidian-setup`** (the `/obsidian-setup` entry point that reruns this runbook —
+including the Step 8 codebase scan), **`obsidian-audit`**, **`obsidian-recall`**, **`obsidian-format-update`**,
+**`obsidian-migrate-projects`**.
 
-> The sections below are the reference that `graphify-obsidian-init` automates. Read them to understand the design, adapt for non-standard layouts, or when the script couldn't patch the hook.
+> **Claude Code — macOS / Linux**
+```bash
+mkdir -p ~/.claude/skills
+for s in obsidian-setup obsidian-audit obsidian-recall obsidian-format-update obsidian-migrate-projects; do
+  cp -r "<VAULT-ROOT>/Templates/skills/$s" ~/.claude/skills/
+done
+```
+
+> **Codex — macOS / Linux** (same, into `~/.agents/skills`)
+```bash
+mkdir -p ~/.agents/skills
+for s in obsidian-setup obsidian-audit obsidian-recall obsidian-format-update obsidian-migrate-projects; do
+  cp -r "<VAULT-ROOT>/Templates/skills/$s" ~/.agents/skills/
+done
+```
+
+> **Windows (PowerShell)** — set `$dst` to `"$HOME\.claude\skills"` (Claude Code) or `"$HOME\.agents\skills"` (Codex)
+```powershell
+$dst = "$HOME\.claude\skills"
+New-Item -ItemType Directory -Force $dst | Out-Null
+'obsidian-setup','obsidian-audit','obsidian-recall','obsidian-format-update','obsidian-migrate-projects' |
+  ForEach-Object { Copy-Item -Recurse -Force "<VAULT-ROOT>\Templates\skills\$_" $dst }
+```
+
+> The bundled copies are **snapshots** for re-install; the live versions this machine runs are the ones in
+> `~/.claude/skills/` and/or `~/.agents/skills/`. If you edit one, refresh its vault copy to keep them in sync.
+
+## Step 2 — Ensure the global directives are present (once per machine)
+
+Graph-first behaviour and the skill triggers live **globally**, not per-project, so they auto-apply to any repo
+that has a `graphify-out/`. Check the agent's global instruction file (table above) and add whichever blocks are
+missing. **Idempotent — skip any block already present.**
+
+`graphify install` may already have added a graph-first directive; if so, leave it. Otherwise add:
+
+```markdown
+# Knowledge Graph (graph-first — only when the repo has one)
+If — and only if — the current repo contains a `graphify-out/` directory, it has a Graphify knowledge graph. In that case, before answering architecture/structure questions or grepping the tree to "find where X happens," consult the graph first:
+- Read `graphify-out/GRAPH_REPORT.md` first — god nodes, community map, suggested questions.
+- `graphify query "<question>"` — semantic search over the graph.
+- `graphify path "A" "B"` / `graphify explain "X"` / `graphify affected "X"` — shortest path / a node's neighbors / reverse-impact.
+Read raw source only once the graph has pointed you at the right files. If there is no `graphify-out/` directory, ignore this section entirely.
+```
+
+Then add the skill-trigger blocks. Use the skill-dir path matching this agent (`~/.claude/skills/...` for Claude
+Code; `~/.agents/skills/...` for Codex). Claude Code explicitly invokes its Skill tool; Codex loads and follows
+the named skill:
+
+```markdown
+# obsidian-setup
+- **obsidian-setup** (`~/.claude/skills/obsidian-setup/SKILL.md`) - wire Graphify + Obsidian onto the current repo. Trigger: `/obsidian-setup`
+When the user types `/obsidian-setup`, invoke the Skill tool with `skill: "obsidian-setup"` (Codex: load and follow the `obsidian-setup` skill) before doing anything else.
+
+# obsidian-audit
+- **obsidian-audit** (`~/.claude/skills/obsidian-audit/SKILL.md`) - persist / recall vault knowledge. Trigger: `/obsidian-audit`
+When the user types `/obsidian-audit`, invoke the Skill tool with `skill: "obsidian-audit"` (Codex: load and follow the `obsidian-audit` skill) before doing anything else.
+
+# obsidian-migrate-projects
+- **obsidian-migrate-projects** (`~/.claude/skills/obsidian-migrate-projects/SKILL.md`) - bring existing projects up to date after a format/setup bump. Trigger: `/obsidian-migrate-projects`
+When the user types `/obsidian-migrate-projects`, invoke the Skill tool with `skill: "obsidian-migrate-projects"` (Codex: load and follow the `obsidian-migrate-projects` skill) before doing anything else.
+```
+
+(`obsidian-recall` and `obsidian-format-update` are invoked by name / their own triggers and
+need no separate block beyond being installed in Step 1.)
 
 ---
 
-## Output Locations — what goes where (read before setup)
+## Output Locations — what goes where (read before wiring the project)
 
-Graphify produces two kinds of output. They live in **different places on purpose** — do not try to move everything into Obsidian.
+Graphify produces two kinds of output. They live in **different places on purpose** — do not try to move
+everything into Obsidian.
 
 | What | Purpose | Lives in |
 |------|---------|----------|
@@ -111,17 +206,27 @@ Graphify produces two kinds of output. They live in **different places on purpos
 | `graphify-auto/` (one `.md` per code entity) | Browsable graph nodes for Obsidian | **`<VAULT>/graphify-auto/`** |
 
 > [!warning] Do not move `graphify-out/` into the vault
-> `graphify query` resolves `graph.json` relative to the repo root, and the hook writes incremental cache there. Only `graphify-auto/` (the `.md` export) belongs in Obsidian.
+> `graphify query` resolves `graph.json` relative to the repo root, and the hook writes incremental cache there.
+> Only `graphify-auto/` (the `.md` export) belongs in Obsidian.
 
-**Gitignore the engine folder** (it's a regenerated build artifact; the finance-ai target does this) — but do **not** move it:
+## Step 3 — Gitignore the engine folder + tune the corpus
 
+`graphify-out/` is a regenerated build artifact — keep it out of git, but do **not** move it:
+
+> **macOS / Linux**
+```bash
+cd <REPO>
+grep -qxF 'graphify-out/' .gitignore 2>/dev/null || { echo '' >> .gitignore; echo 'graphify-out/' >> .gitignore; }
 ```
-# .gitignore
-graphify-out/
+
+> **Windows (PowerShell)**
+```powershell
+if (-not (Select-String -Path .gitignore -Pattern 'graphify-out/' -Quiet 2>$null)) { Add-Content .gitignore "`ngraphify-out/" }
 ```
 
-**Tune the corpus with a `.graphifyignore`** (repo root) so the graph indexes signal, not noise — create it
-**before the first build** (Step 2). Exclude generated, vendored, and bundled-asset files; adjust per repo:
+Then create a **`.graphifyignore`** at the repo root, **before the first build (Step 5)**, so the graph indexes
+signal, not noise. Exclude generated, vendored, and bundled-asset files; **inspect the repo and adjust** — this
+is per-project tuning:
 
 ```
 # .graphifyignore
@@ -134,22 +239,9 @@ graphify-out/
 # also list any generated source (e.g. a file written by a codegen/prestart step)
 ```
 
-Without it, big UI bundles, build output, and downloaded assets dilute community detection and bloat the
-graph. This is per-project tuning — inspect the repo and add what's noise for *that* codebase.
+Without it, big UI bundles, build output, and downloaded assets dilute community detection and bloat the graph.
 
-**Optional — also surface `GRAPH_REPORT.md` inside Obsidian.** The report (god nodes, surprising connections, suggested questions) reads well in Obsidian. To keep a copy in the vault on every commit, add this to the hook in Step 4, right after the Obsidian export block:
-
-```python
-    import shutil as _sh
-    # Use the RESOLVED absolute vault path for this machine (see "Resolve the vault root" above),
-    # not a literal ~/Obsidian/... . expanduser('~') resolves to the user home on every OS.
-    _sh.copy(str(_root / 'graphify-out' / 'GRAPH_REPORT.md'),
-             os.path.expanduser('~/Obsidian/Claude/Projects/<PROJECT>/graphify-auto/GRAPH_REPORT.md'))
-```
-
----
-
-## Step 1 — Create the vault hub
+## Step 4 — Create the vault hub + folders
 
 > **macOS / Linux (bash)**
 ```bash
@@ -158,22 +250,21 @@ mkdir -p <VAULT>/{specs,decisions,knowledge,reference,plans,investigations}
 
 > **Windows (PowerShell)** — brace-expansion isn't supported; loop instead:
 ```powershell
-# <VAULT> = the discovered vault root + \Projects\<PROJECT>
-'specs','decisions','knowledge','reference','plans','investigations' | % {
+'specs','decisions','knowledge','reference','plans','investigations' | ForEach-Object {
   New-Item -ItemType Directory -Force "<VAULT>\$_" | Out-Null
 }
 ```
 
 Create `<VAULT>/<PROJECT>.md` from the **Project Hub** template in `FORMAT.md`. Stamp **both** version fields
 from [[VERSIONS]]: `format_version` (current FORMAT.md) and `setup_version` (this template's `doc_version` —
-records which setup procedure wired the project, so a stale value later flags a re-wire). Then add the
-`## Notes` router grouped by type and `## Key Paths`. Add a bullet to `~/Obsidian/Claude/Home.md`:
+records which setup procedure wired the project, so a stale value later flags a re-wire). Add the `## Notes`
+router grouped by type and `## Key Paths`. Then add a bullet to `<VAULT-ROOT>/Home.md`:
 
 ```markdown
 - [[Projects/<PROJECT>/<PROJECT>|<PROJECT>]] — <one-line description>
 ```
 
-## Step 2 — Build the graph
+## Step 5 — Build the graph
 
 From the repo root:
 
@@ -182,12 +273,14 @@ cd <REPO>
 /graphify
 ```
 
-This runs detection → AST extraction (free, code) + semantic extraction (LLM subagents, docs) → clustering → outputs in `graphify-out/` (`graph.json`, `GRAPH_REPORT.md`, `graph.html`).
+This runs detection → AST extraction (free, code) + semantic extraction (LLM subagents, docs) → clustering →
+outputs in `graphify-out/` (`graph.json`, `GRAPH_REPORT.md`, `graph.html`).
 
 > [!note] Use the active agent's subagents, not Gemini
-> If `GEMINI_API_KEY`/`GOOGLE_API_KEY` is set graphify will route semantic extraction through Gemini. Unset it to use Claude Code or Codex subagents instead.
+> If `GEMINI_API_KEY`/`GOOGLE_API_KEY` is set graphify routes semantic extraction through Gemini. Unset it to
+> use Claude Code or Codex subagents instead. The code (AST) pass is always local and 0-token regardless.
 
-## Step 3 — Export to the vault + install the hook
+## Step 6 — Export to the vault + install & patch the hook
 
 ```bash
 graphify export obsidian --dir <VAULT>/graphify-auto/
@@ -195,48 +288,42 @@ graphify hook install
 ```
 
 `graphify hook install` installs **two** hooks: **post-commit** (rebuild on every commit) and **post-checkout**
-(rebuild on branch switch) — both 0-token AST rebuilds. **But the stock hooks only rebuild `graph.json` — they
-do not re-export to Obsidian.** Fix the post-commit one in Step 4. (Note: neither hook fires on `git pull` — see
-*Daily use* for the `graphify update .` resync.)
+(rebuild on branch switch) — both 0-token AST rebuilds. **But the stock hooks only rebuild `graph.json` — they do
+not re-export to Obsidian.** Patch the post-commit one below. (Neither hook fires on `git pull` — see *Daily use*.)
 
 > [!warning] Husky / a custom `core.hooksPath` (common on JS/TS repos)
 > If the repo uses **Husky** (or otherwise sets `git config core.hooksPath`), git does **not** read
-> `.git/hooks/` — hooks live in the pointed-at dir (Husky v9 → `.husky/`, with shims in `.husky/_`).
-> Two consequences:
+> `.git/hooks/` — hooks live in the pointed-at dir (Husky v9 → `.husky/`, shims in `.husky/_`). Consequences:
 >
-> 1. **`graphify hook install` may error** with *"hooks path from core.hooksPath looks like a Windows
->    path"* — recent graphify rejects a Windows-style `core.hooksPath`. This does **not** mean the hook is
->    missing: an earlier run (or graphify itself) may already have written the rebuild block into
->    `.husky/post-commit` / `.husky/post-checkout`. Check first:
+> 1. **`graphify hook install` may error** with *"hooks path from core.hooksPath looks like a Windows path"* —
+>    recent graphify rejects a Windows-style `core.hooksPath`. This does **not** mean the hook is missing; check:
 >    ```bash
 >    git config --get core.hooksPath                 # e.g. .husky/_  → Husky is active
 >    grep -l 'graphify-hook-start' .husky/post-commit .git/hooks/post-commit 2>/dev/null
 >    ```
->    - If a file already contains `graphify-hook-start`, the hook is installed — skip install, just patch
->      that file in Step 4.
->    - If not, install into the Husky dir manually: create `.husky/post-commit` and `.husky/post-checkout`
->      containing graphify's rebuild block (copy from another wired repo, or run `graphify hook install`
->      from a shell where `core.hooksPath` is temporarily unset, then move the generated files into
->      `.husky/`). **Do not** just `git config --unset core.hooksPath` — that silently disables Husky's
->      own hooks (lint-staged, commit-msg).
+>    - If a file already contains `graphify-hook-start`, the hook is installed — skip install, patch that file.
+>    - If not, install into the Husky dir manually: create `.husky/post-commit` and `.husky/post-checkout` with
+>      graphify's rebuild block (copy from another wired repo, or run `graphify hook install` from a shell where
+>      `core.hooksPath` is temporarily unset, then move the generated files into `.husky/`). **Do not** just
+>      `git config --unset core.hooksPath` — that silently disables Husky's own hooks (lint-staged, commit-msg).
 > 2. Graphify's block **coexists** with Husky's — append it as an extra hook file; don't overwrite
 >    `.husky/pre-commit` (lint-staged).
 >
-> `.husky/` is usually gitignored and hooks are never version-controlled anyway, so re-apply after a fresh
-> clone (same as `.git/hooks/`).
+> `.husky/` is usually gitignored and hooks are never version-controlled anyway, so re-apply after a fresh clone.
 
-## Step 4 — Wire the Obsidian export into the hook (the missing piece)
-
-Edit the post-commit hook — `<REPO>/.git/hooks/post-commit`, **or `<REPO>/.husky/post-commit` if the repo uses Husky / a custom `core.hooksPath`** (see the Step 3 warning; patch whichever file actually contains the `graphify-hook-start` marker). Find the embedded `_src` Python block, locate the `_rebuild_code(...)` call, and insert the export immediately after it:
+**Wire the Obsidian export into the hook (the missing piece).** Edit the post-commit hook —
+`<REPO>/.git/hooks/post-commit`, **or `<REPO>/.husky/post-commit` if the repo uses Husky** (patch whichever file
+actually contains the `graphify-hook-start` marker). Find the embedded `_src` Python block, locate the
+`_rebuild_code(...)` call, and insert the export immediately after it:
 
 ```python
     _rebuild_code(_root, changed_paths=changed, force=_force)
 
     # Export updated graph to Obsidian vault.
     # Hardcode the DISCOVERED absolute vault path for THIS machine here (the <VAULT>/graphify-auto/ you
-    # resolved during setup) — the hook runs detached and under GUI git clients, so it can't discover or
-    # read env vars at run time. expanduser('~') resolves to the user home on every OS, so pick the
-    # expanduser form whose tail matches where the vault actually lives:
+    # resolved in Step 0) — the hook runs detached and under GUI git clients, so it can't discover or read
+    # env vars at run time. expanduser('~') resolves to the user home on every OS, so pick the expanduser
+    # form whose tail matches where the vault actually lives:
     import subprocess as _sp
     _obsidian_dir = os.path.expanduser('~/Obsidian/Claude/Projects/<PROJECT>/graphify-auto/')      # macOS default
     # e.g. a Windows box with the vault on the Desktop:
@@ -251,15 +338,19 @@ Edit the post-commit hook — `<REPO>/.git/hooks/post-commit`, **or `<REPO>/.hus
         print(f'[graphify hook] Obsidian export warning: {_r.stderr.strip()}')
 ```
 
-The export runs in the hook's detached background process, so commits still return immediately. Log: `~/.cache/graphify-rebuild.log`.
+The export runs in the hook's detached background process, so commits still return immediately. Log:
+`~/.cache/graphify-rebuild.log`.
 
-> **Graph-first behaviour is global — no per-project instruction-file step.** It lives once per installed
-> agent in `~/.claude/CLAUDE.md` (Claude Code) and/or `~/.codex/AGENTS.md` (Codex), as a conditional directive
-> that fires only when a repo has a `graphify-out/`. The global directive is the durable mechanism; it also
-> works where `graphify claude install`'s PreToolUse hook silently no-ops. See [[How to Setup]] → *Machine
-> setup* for the exact blocks and the separate skill locations (`~/.claude/skills` and `~/.agents/skills`).
+> [!tip] Optional — also surface `GRAPH_REPORT.md` inside Obsidian
+> The report (god nodes, surprising connections, suggested questions) reads well in Obsidian. To keep a copy in
+> the vault on every commit, add this right after the Obsidian export block (use the RESOLVED absolute path):
+> ```python
+>     import shutil as _sh
+>     _sh.copy(str(_root / 'graphify-out' / 'GRAPH_REPORT.md'),
+>              os.path.expanduser('~/Obsidian/Claude/Projects/<PROJECT>/graphify-auto/GRAPH_REPORT.md'))
+> ```
 
-## Step 5 — Add the hub Graph section + a hook gotcha note
+## Step 7 — Add the hub Graph section + a hook gotcha note
 
 In `<VAULT>/<PROJECT>.md`, under `## Notes` add:
 
@@ -270,40 +361,96 @@ Auto-generated knowledge graph nodes. Query via `graphify query "<question>"` ra
 <!-- /@generated -->
 ```
 
-Create `<VAULT>/knowledge/git-hook-graphify.md` (tag `gotcha` + `tooling`) recording: the post-commit/post-checkout hook keeps the graph + vault fresh on every commit (0-token AST rebuild + Obsidian export); a `git pull` is **not** a commit, so run `graphify update .` to resync after pulling; and re-register with `graphify hook install` after a fresh clone (hooks aren't version-controlled).
+Create `<VAULT>/knowledge/git-hook-graphify.md` (tags `gotcha` + `tooling`) recording: the
+post-commit/post-checkout hook keeps the graph + vault fresh on every commit (0-token AST rebuild + Obsidian
+export); a `git pull` is **not** a commit, so run `graphify update .` to resync after pulling; and re-register
+with `graphify hook install` after a fresh clone (hooks aren't version-controlled).
 
-## Step 5b — Populate the vault from the codebase
+## Step 8 — Populate the vault from the codebase (the initial scan)
 
-In the Claude Code or Codex session, type:
+Read the codebase and fill the vault with what can be **derived from the code**. This is the one-time initial
+population. (Capturing knowledge from a *work session* later is `/obsidian-audit` — a different job; don't
+conflate them.)
 
+**Re-scan mode:** if the project is already wired and you were asked only to refresh the derived notes after
+the codebase changed a lot, skip Steps 1–7 and run just this step.
+
+**First read** `<VAULT-ROOT>/FORMAT.md` for folder layout, frontmatter, and note structure, and
+`<VAULT-ROOT>/VERSIONS.md` for the current `format_version` to stamp.
+
+### What to scan
+
+Read in this order:
+1. Entry point(s) — `server.js`, `index.js`, `main.py`, `app.py`, or equivalent
+2. Route / controller files
+3. Service / domain logic files
+4. Models and schemas
+5. Utilities and middleware
+6. Config, constants, and environment variable references (`.env.example`, `CLAUDE.md`)
+
+Use `graphify query "<question>"` to locate files quickly — the graph is already built (Step 5).
+
+### What to fill
+
+| Target | Fill with |
+|--------|-----------|
+| `specs/` | How the main flow works as built — entry points, key pipelines, data flow. One note per major feature or flow. |
+| `knowledge/` | API quirks, non-obvious patterns, gotchas visible in the code. Only if genuinely surprising — not obvious from reading the file. |
+| `reference/` | External endpoints, base URLs, third-party service names, env var names for credentials. |
+| Hub `<One-paragraph summary.>` | What the system does, derived from the entry point and services. |
+| Hub `**Stack:**` | The actual stack found in `package.json`, `requirements.txt`, imports, or equivalent. |
+| Hub `## Key Paths` table | Entry point, key services, key models — with their real file paths. |
+
+**Cannot derive from code — skip entirely:** `decisions/` (the "why" behind a choice isn't in code — ask the
+human later), `plans/` (future intent — only the human knows), `graphify-auto/` (machine-generated).
+
+### Anti-hallucination rules (hard)
+
+- Only write what you actually read in the files — no filling gaps, no "probably", no "likely"
+- No reconstructed reasoning — if you see a decision in code but not the reason, don't invent a rationale
+- No inferred API behavior — only what was directly observed
+- No vague notes — skip anything that doesn't pass the three-test bar
+- When uncertain, omit — a missing note is recoverable, a wrong note misleads every future agent
+
+### Three-test bar
+
+A note must pass ALL three before being written:
+1. Read from actual files in this scan — not assumed or inferred
+2. Would cost real effort to re-derive
+3. A future agent would actually need it
+
+### Note format
+
+```markdown
+---
+tags:
+  - <tag>   # spec | gotcha | pattern | api-quirk | reference
+project: <PROJECT>
+date: <YYYY-MM-DD>
+format_version: "<current, from VERSIONS.md>"
+---
+
+# <Title>
+
+See also: [[<PROJECT>]]
+
+<The knowledge — concise. One concept.>
 ```
-/obsidian-init
-```
 
-The agent will scan entry points, services, routes, models, utilities, and config, then present the full candidate note list for `specs/`, `knowledge/`, and `reference/` for approval before writing anything. It also fills the hub's placeholder fields (summary, stack, Key Paths table).
+Link each new note from the hub under its matching type subsection, with a **high-signal hook** stating what
+the note answers. If one area grows past ~5 related notes, group it under `specs/<topic>/` or
+`decisions/<topic>/` with an index note (FORMAT.md → *Topic Grouping*).
 
-> [!note] This is not `/obsidian-audit`
-> `/obsidian-audit` is for capturing knowledge from a work session. `/obsidian-init` is for the one-time initial vault population from code. Use each only in its intended context.
+### Confirm before saving
 
-| Folder       | What Claude can derive from code                                          |
-| ------------ | ------------------------------------------------------------------------- |
-| `specs/`     | How the main flow works as built — entry points, key pipelines, data flow |
-| `knowledge/` | API quirks, non-obvious patterns, gotchas visible in the code             |
-| `reference/` | External endpoints, base URLs, third-party services used                  |
+Before writing any file, present the full proposed list to the user:
+- Each candidate note: slug, type folder, one-line summary of what it captures
+- The proposed hub fills: exact text for summary, stack, Key Paths
+- Anything deliberately skipped, and why
 
-Also fills the hub's placeholder fields:
-- `<One-paragraph summary.>` — what the system does
-- `**Stack:** <tech · tech · tech>` — the actual stack
-- `## Key Paths` table — entry points, key services, key models
+**Wait for explicit user approval before creating or editing any file.**
 
-**Cannot derive from code — skip:**
-
-| Folder | Why |
-|--------|-----|
-| `decisions/` | The "why" behind choices isn't in code — needs the human to explain |
-| `plans/` | Future intent — only the human knows this |
-
-## Step 6 — Verify
+## Step 9 — Verify
 
 > **macOS / Linux**
 ```bash
@@ -311,13 +458,13 @@ ls <VAULT>/                              # specs decisions knowledge reference p
 ls <VAULT>/graphify-auto/ | head -3      # one .md per code entity
 cat <REPO>/.graphifyignore               # corpus tuning present
 if grep -q 'Knowledge Graph' ~/.claude/CLAUDE.md 2>/dev/null || grep -q 'Knowledge Graph' ~/.codex/AGENTS.md 2>/dev/null; then echo "global graph-first directive present ✓"; fi
-# make a trivial commit, then:
+# make a trivial commit, then (hook runs in the background — give it a few seconds):
 tail ~/.cache/graphify-rebuild.log       # should show rebuild + "Obsidian vault updated"
 ```
 
 > **Windows (PowerShell)**
 ```powershell
-ls <VAULT>\                                                # specs decisions knowledge reference plans investigations graphify-auto
+ls <VAULT>\
 ls <VAULT>\graphify-auto\ | Select-Object -First 3
 Get-Content <REPO>\.graphifyignore
 $instructionFiles = "$HOME\.claude\CLAUDE.md", "$HOME\.codex\AGENTS.md" | Where-Object { Test-Path $_ }
@@ -326,13 +473,28 @@ if ($instructionFiles | Select-String -Pattern 'Knowledge Graph' -Quiet) { "glob
 Get-Content "$HOME\.cache\graphify-rebuild.log" -Tail 10   # should show rebuild + "Obsidian vault updated"
 ```
 
+Expect both lines in the log:
+```
+[graphify hook] N file(s) changed - rebuilding graph...
+[graphify hook] Obsidian vault updated → <VAULT>/graphify-auto/
+```
+
+> [!warning] If the log is empty or shows no "Obsidian vault updated" line
+> 1. Check the hook is executable: `ls -l <REPO>/.git/hooks/post-commit` — should show `-rwxr-xr-x`.
+> 2. Check graphify is on PATH inside the hook's environment: `which graphify`.
+> 3. Confirm the export block from Step 6 is actually present in the hook file that fired.
+> 4. Manual fallback: `cd <REPO> && graphify update . && graphify export obsidian --dir "<VAULT>/graphify-auto/"`.
+
+Then report back to the user: each note created (path + one-line hook), hub fields filled, and anything skipped.
+
 ---
 
 ## Daily use after setup
 
 - **Code-structure questions** ("what calls X?", "trace flow through Y"): `graphify query "<question>"` — never read `graphify-auto/` notes by hand.
-- **Human WHY/decisions/plans**: vault recall protocol (hub → one note), via `/obsidian-audit` (see [[skills/obsidian-audit/SKILL|obsidian-audit skill]]).
-- **After `git pull` (teammate's changes):** run `graphify update .` (0 tokens, AST-only) to resync the graph. The hook only fires on commit/checkout — a fast-forward pull updates code but not the graph, so the graph (and its vault export) stay behind until your next commit or a manual `update`.
+- **Human WHY/decisions/plans**: vault recall protocol (hub → one note), via `/obsidian-audit` and `/obsidian-recall`.
+- **After `git pull` (teammate's changes):** run `graphify update .` (0 tokens, AST-only) to resync the graph. The hook only fires on commit/checkout — a fast-forward pull updates code but not the graph, so it (and its vault export) stay behind until your next commit or a manual `update`.
+- **After editing docs (`.md`):** run `/graphify` again (code is automatic; doc concepts aren't).
 - **Never** edit `graphify-auto/` manually — it's overwritten every commit. Annotate only inside `<!-- @user -->…<!-- /@user -->` sentinels.
 - **Adding a new note type / folder to the vault format**: invoke the `obsidian-format-update` skill — it lists every vault doc that must change, the version-bumping protocol, and what NOT to touch.
-- **Migrating existing projects after a format/setup bump**: invoke the `obsidian-migrate-projects` skill — covers hub-only bumps for MINOR changes vs full note migration for MAJOR changes, and both `format_version` + `setup_version` in one pass.
+- **Bringing existing projects up to date after a format/setup bump**: type **`/obsidian-migrate-projects`** — it scans every project hub, skips those already current, and applies hub-only bumps for MINOR changes vs full note migration for MAJOR changes, updating both `format_version` + `setup_version` in one pass.

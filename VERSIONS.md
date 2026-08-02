@@ -20,12 +20,12 @@ section below.
 
 | Document | Version | Updated | Purpose |
 |----------|---------|---------|---------|
-| [[FORMAT]] | 2.5.0 | 2026-07-06 | Per-project note structure standard — folders, frontmatter, hub, recall protocol |
-| [[graphify-obsidian-setup]] | 1.7.1 | 2026-07-12 | AI procedure to wire graphify + Obsidian onto a project |
+| [[FORMAT]] | 2.6.0 | 2026-08-02 | Per-project note structure standard — folders, frontmatter, hub, recall protocol |
+| [[graphify-obsidian-setup]] | 1.8.0 | 2026-08-02 | AI procedure to wire graphify + Obsidian onto a project |
 
 > [[How to Setup]] is the human-facing mirror of [[graphify-obsidian-setup]] — keep the two in step. It
 > carries no independent version; its frontmatter `mirrors_setup` records which setup `doc_version` it's in
-> step with (currently `1.7.1`). If `mirrors_setup` lags the registry's setup version, the human guide is
+> step with (currently `1.8.0`). If `mirrors_setup` lags the registry's setup version, the human guide is
 > behind the AI template and needs reconciling.
 
 ## How projects reference these versions
