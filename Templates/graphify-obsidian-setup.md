@@ -2,9 +2,9 @@
 tags:
   - meta
   - template
-doc_version: "1.8.0"
+doc_version: "1.9.0"
 aligns_with_format: "2.6.0"
-updated: 2026-08-02
+updated: 2026-08-03
 ---
 
 # Agent Runbook: Set up Graphify + Obsidian on a Project
@@ -154,41 +154,31 @@ New-Item -ItemType Directory -Force $dst | Out-Null
 
 ## Step 2 — Ensure the global directives are present (once per machine)
 
-Graph-first behaviour and the skill triggers live **globally**, not per-project, so they auto-apply to any repo
-that has a `graphify-out/`. Check the agent's global instruction file (table above) and add whichever blocks are
-missing. **Idempotent — skip any block already present.**
+Two behavioural directives live **globally**, not per-project, so they auto-apply to any repo. Check the agent's
+global instruction file (table above) and add whichever is missing. **Idempotent — skip any block already present.**
 
-`graphify install` may already have added a graph-first directive; if so, leave it. Otherwise add:
+> **Do not add per-skill `/`-trigger blocks here.** The bundled skills installed in Step 1 are auto-discovered
+> from each `SKILL.md`'s `description` frontmatter — the agent loads a skill when its trigger is typed *without*
+> any block in the global file. Keep the global file to just the two behavioural directives below; per-skill
+> trigger blocks are redundant clutter.
+
+**1. Graph-first.** `graphify install` may already have added a graph-first directive; if so, leave it. Otherwise add:
 
 ```markdown
 # Knowledge Graph (graph-first — only when the repo has one)
-If — and only if — the current repo contains a `graphify-out/` directory, it has a Graphify knowledge graph. In that case, before answering architecture/structure questions or grepping the tree to "find where X happens," consult the graph first:
-- Read `graphify-out/GRAPH_REPORT.md` first — god nodes, community map, suggested questions.
+If — and only if — the current repo contains a `graphify-out/` directory, it has a Graphify knowledge graph. In that case, **for any task that depends on how the codebase is structured or how its parts relate** — answering architecture/structure questions, locating where something happens, planning or assessing the impact of a change, drawing a diagram / canvas / visualization, explaining a flow, onboarding (this list is illustrative, not exhaustive) — consult the graph first, before reaching for prose, `grep`, or reading files:
+- Read `graphify-out/GRAPH_SUMMARY.md` first — lean map: top god nodes, one-liner per community, entry points. Open the full `graphify-out/GRAPH_REPORT.md` only if the summary doesn't answer. If `GRAPH_SUMMARY.md` doesn't exist (older graph), fall back to `GRAPH_REPORT.md`.
 - `graphify query "<question>"` — semantic search over the graph.
-- `graphify path "A" "B"` / `graphify explain "X"` / `graphify affected "X"` — shortest path / a node's neighbors / reverse-impact.
-Read raw source only once the graph has pointed you at the right files. If there is no `graphify-out/` directory, ignore this section entirely.
+- `graphify path "A" "B"` / `graphify explain "X"` / `graphify affected "X"` — shortest path between two nodes / a node's neighbors / reverse-impact ("what breaks if I change X").
+Read raw source only once the graph has pointed you at the right files. **If there is no `graphify-out/` directory, ignore this section entirely.**
 ```
 
-Then add the skill-trigger blocks. Use the skill-dir path matching this agent (`~/.claude/skills/...` for Claude
-Code; `~/.agents/skills/...` for Codex). Claude Code explicitly invokes its Skill tool; Codex loads and follows
-the named skill:
+**2. Vault recall.** Add the recall directive so the agent checks the vault before re-deriving a decision or debugging from scratch:
 
 ```markdown
-# obsidian-setup
-- **obsidian-setup** (`~/.claude/skills/obsidian-setup/SKILL.md`) - wire Graphify + Obsidian onto the current repo. Trigger: `/obsidian-setup`
-When the user types `/obsidian-setup`, invoke the Skill tool with `skill: "obsidian-setup"` (Codex: load and follow the `obsidian-setup` skill) before doing anything else.
-
-# obsidian-audit
-- **obsidian-audit** (`~/.claude/skills/obsidian-audit/SKILL.md`) - persist / recall vault knowledge. Trigger: `/obsidian-audit`
-When the user types `/obsidian-audit`, invoke the Skill tool with `skill: "obsidian-audit"` (Codex: load and follow the `obsidian-audit` skill) before doing anything else.
-
-# obsidian-migrate-projects
-- **obsidian-migrate-projects** (`~/.claude/skills/obsidian-migrate-projects/SKILL.md`) - bring existing projects up to date after a format/setup bump. Trigger: `/obsidian-migrate-projects`
-When the user types `/obsidian-migrate-projects`, invoke the Skill tool with `skill: "obsidian-migrate-projects"` (Codex: load and follow the `obsidian-migrate-projects` skill) before doing anything else.
+# Vault Recall (obsidian-recall — before investigating/debugging or re-deriving)
+When you are about to investigate or debug an issue, answer why something is failing/erroring, or answer "why did we choose X", "have we seen this bug/error before", or "what's the plan for Y" — and the project has a vault hub at `~/Obsidian/Claude/Projects/<project>/<project>.md` — **before deriving from scratch**, load and follow the `obsidian-recall` skill: read the project hub and scan its `### Investigations`, `### Knowledge`, and `### Decisions` hooks for a matching symptom or question. If a hook matches, open that one note first — it may already hold the root cause, resolution, or rationale. If nothing matches, proceed normally. Also runs on explicit `/obsidian-recall`.
 ```
-
-(`obsidian-recall` and `obsidian-format-update` are invoked by name / their own triggers and
-need no separate block beyond being installed in Step 1.)
 
 ---
 

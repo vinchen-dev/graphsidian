@@ -3,12 +3,23 @@ tags:
   - meta
   - changelog
 tracks: graphify-obsidian-setup
-updated: 2026-07-12
+updated: 2026-08-03
 ---
 
 # graphify-obsidian-setup.md — changelog
 
 Version history for [[graphify-obsidian-setup]]. Registry: [[VERSIONS]].
+
+### 1.9.0 — 2026-08-03
+- **Step 2 (global directives) trimmed to two behavioural directives.** The global instruction file now carries
+  only (1) the graph-first *Knowledge Graph* directive and (2) a new *Vault Recall* directive that fires
+  `obsidian-recall` before investigating/debugging or re-deriving a decision. The three per-skill `/`-trigger
+  blocks (`obsidian-setup`, `obsidian-audit`, `obsidian-migrate-projects`) were **removed** — every bundled skill
+  is auto-discovered from its `SKILL.md` `description` (installed Step 1), so the trigger blocks were redundant.
+- **Graph-first directive refreshed** to read `GRAPH_SUMMARY.md` first (fall back to `GRAPH_REPORT.md`) and to
+  cover the full set of structure-dependent tasks, matching the current canonical wording.
+- Additive / simplification — MINOR. Existing global files keep working; drop the stale trigger blocks and add
+  the Vault Recall directive when convenient.
 
 ### 1.8.0 — 2026-08-02
 - **Restructured into the single self-contained agent runbook.** [[graphify-obsidian-setup]] is now the sole
