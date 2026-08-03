@@ -80,7 +80,7 @@ Run Graphify's own installer once — this registers the **`/graphify`** skill a
 graphify install
 ```
 
-> The `/graphify` skill comes from Graphify itself (this step), **not** from the vault. The vault bundles five skills of its own (the `obsidian-setup` entry point + four other `obsidian-*` skills, listed under [Skills](#skills)), which the per-project setup installs for you.
+> The `/graphify` skill comes from Graphify itself (this step), **not** from the vault. The vault bundles six skills of its own (the `obsidian-setup` entry point + five other `obsidian-*` skills, listed under [Skills](#skills)), which the per-project setup installs for you.
 
 ### 5. (Config) Extraction backend — optional
 
@@ -110,7 +110,7 @@ If a project has a `graphify-out/` directory, the agent consults the knowledge g
 
 ## Skills
 
-Five skills are **bundled with this vault** (a sixth, `/graphify`, comes from `graphify install` — see manual install Step 4). The bundled five live in `Templates/skills/` and are copied into `~/.claude/skills/` (Claude Code) or `~/.agents/skills/` (Codex) **automatically the first time you set up a project** — you don't install them by hand.
+Six skills are **bundled with this vault** (a seventh, `/graphify`, comes from `graphify install` — see manual install Step 4). The bundled six live in `Templates/skills/` and are copied into `~/.claude/skills/` (Claude Code) or `~/.agents/skills/` (Codex) **automatically the first time you set up a project** — you don't install them by hand.
 
 | Skill | Trigger | What it does |
 |---|---|---|
@@ -119,6 +119,7 @@ Five skills are **bundled with this vault** (a sixth, `/graphify`, comes from `g
 | `obsidian-recall` | `/obsidian-recall` | Recall / investigation lookup before debugging or deciding |
 | `obsidian-format-update` | invoke by name | Guides `FORMAT.md` changes — every file to update, version-bumping protocol, per-project migration |
 | `obsidian-migrate-projects` | `/obsidian-migrate-projects` | Scans all projects and brings any that are behind up to date after a `FORMAT.md` or setup version bump |
+| `obsidian-maintenance` | `/obsidian-maintenance` | Per-project weekly/monthly sweep — re-checks whether `specs`/`reference`/`knowledge` notes still match the current code (graph-first) and proposes fixes for drifted or obsolete notes |
 
 ## Vault Structure
 

@@ -10,6 +10,28 @@ updated: 2026-08-03
 
 Version history for [[graphify-obsidian-setup]]. Registry: [[VERSIONS]].
 
+### 1.10.0 — 2026-08-03
+- **Added a sixth bundled skill, `obsidian-maintenance` (`/obsidian-maintenance`).** A per-project, manually-run
+  maintenance sweep (weekly/monthly) that re-checks whether a project's `specs/`, `reference/`, and
+  `knowledge/` notes still match the current code, and proposes fixes for drifted or obsolete notes.
+- **Graph-first by claim type.** Existence and structure/flow claims are settled via
+  `graphify explain`/`path`/`affected`; behaviour/value/threshold claims — which the structure graph can't
+  see — are confirmed by reading the graph-*located* source; string-literal `reference/` claims are checked
+  by grepping source; external-system claims (Lark codes, bank UI, 3rd-party quirks) are routed to the user
+  as "not code-checkable" rather than given a fabricated verdict.
+- **Stateless + propose-and-confirm.** No per-note frontmatter, no ledger, no FORMAT change — each run emits
+  an ephemeral report and proposes edits (or rewrite-or-remove for obsolete notes), writing only on user
+  confirm; it never rewrites or deletes a note unprompted. Explicit-invocation-only, like `obsidian-audit`.
+- Step 1 bundled-skill list five → six; the install loops and prose updated to include `obsidian-maintenance`.
+  `How to Setup.md` daily-use table + "what the agent does" list updated to match.
+- Additive — MINOR. Existing setups keep working; install the new skill (the per-project setup does this
+  idempotently) and bump hub `setup_version` to `"1.10.0"` when convenient. No re-wiring.
+
+**Migration (1.10.0):**
+- [ ] Ensure `obsidian-maintenance` is present in your agent's skill dir (the per-project setup installs all six
+      bundled skills idempotently; or copy `Templates/skills/obsidian-maintenance/` yourself).
+- [ ] Bump hub `setup_version` to `"1.10.0"` when convenient — no wiring changes needed.
+
 ### 1.9.0 — 2026-08-03
 - **Step 2 (global directives) trimmed to two behavioural directives.** The global instruction file now carries
   only (1) the graph-first *Knowledge Graph* directive and (2) a new *Vault Recall* directive that fires

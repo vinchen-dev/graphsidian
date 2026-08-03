@@ -3,7 +3,7 @@ tags:
   - meta
   - howto
 format_version: "2.2.0"
-mirrors_setup: "1.9.0"     # human mirror of graphify-obsidian-setup.md (this doc has no independent version; keep in step)
+mirrors_setup: "1.10.0"     # human mirror of graphify-obsidian-setup.md (this doc has no independent version; keep in step)
 updated: 2026-08-03
 ---
 
@@ -63,9 +63,10 @@ it works on any machine and any vault location, and it adapts to whichever agent
 Driven entirely by [[graphify-obsidian-setup]]:
 
 1. **Resolve the vault root** and verify the README prerequisites are installed.
-2. **Install the five bundled vault skills** (`obsidian-setup`, `obsidian-audit`, `obsidian-recall`,
-   `obsidian-format-update`, `obsidian-migrate-projects`) into the agent's user skill directory, and ensure the
-   global graph-first + trigger directives are present. Idempotent — already-installed pieces are skipped.
+2. **Install the six bundled vault skills** (`obsidian-setup`, `obsidian-audit`, `obsidian-recall`,
+   `obsidian-format-update`, `obsidian-migrate-projects`, `obsidian-maintenance`) into the agent's user skill
+   directory, and ensure the global graph-first + trigger directives are present. Idempotent —
+   already-installed pieces are skipped.
    (After this, `/obsidian-setup` is available for your next project.)
 3. **Wire the current project**: gitignore + `.graphifyignore`, build the graph (`/graphify`), install and patch
    the post-commit hook so it re-exports into Obsidian, create the project hub, and scan the codebase to
@@ -87,3 +88,4 @@ Driven entirely by [[graphify-obsidian-setup]]:
 | Browse the graph | open `graphify-out/graph.html`, or `graphify-auto/` in Obsidian |
 | Add a new note type / folder to the vault format | invoke the `obsidian-format-update` skill |
 | Bring existing projects up to date after a format/setup version bump | `/obsidian-migrate-projects` |
+| Check whether a project's notes are still true (weekly/monthly) | `/obsidian-maintenance` |

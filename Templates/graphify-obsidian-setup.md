@@ -2,7 +2,7 @@
 tags:
   - meta
   - template
-doc_version: "1.9.0"
+doc_version: "1.10.0"
 aligns_with_format: "2.6.0"
 updated: 2026-08-03
 ---
@@ -107,7 +107,7 @@ Known roots so far (hints, not defaults): macOS `~/Obsidian/Claude`; one Windows
 
 ## Step 1 — Install the bundled vault skills (once per machine)
 
-The vault bundles five skills in `<VAULT-ROOT>/Templates/skills/`. Copy them into the active agent's user
+The vault bundles six skills in `<VAULT-ROOT>/Templates/skills/`. Copy them into the active agent's user
 skill directory, then register their triggers. **Idempotent — if a skill folder is already present and current,
 skip the copy.** (`/graphify` is handled by `graphify install`, not here.)
 
@@ -121,14 +121,15 @@ instead tell the user exactly which files to add and where, then continue with t
 | Claude Code | `~/.claude/skills/` | `~/.claude/CLAUDE.md` (Win: `%USERPROFILE%\.claude\CLAUDE.md`) |
 | Codex | `~/.agents/skills/` | `~/.codex/AGENTS.md` (Win: `%USERPROFILE%\.codex\AGENTS.md`) |
 
-The five bundled skills: **`obsidian-setup`** (the `/obsidian-setup` entry point that reruns this runbook —
+The six bundled skills: **`obsidian-setup`** (the `/obsidian-setup` entry point that reruns this runbook —
 including the Step 8 codebase scan), **`obsidian-audit`**, **`obsidian-recall`**, **`obsidian-format-update`**,
-**`obsidian-migrate-projects`**.
+**`obsidian-migrate-projects`**, **`obsidian-maintenance`** (a weekly/monthly per-project sweep that re-checks
+whether the project's notes still match the current code and proposes fixes).
 
 > **Claude Code — macOS / Linux**
 ```bash
 mkdir -p ~/.claude/skills
-for s in obsidian-setup obsidian-audit obsidian-recall obsidian-format-update obsidian-migrate-projects; do
+for s in obsidian-setup obsidian-audit obsidian-recall obsidian-format-update obsidian-migrate-projects obsidian-maintenance; do
   cp -r "<VAULT-ROOT>/Templates/skills/$s" ~/.claude/skills/
 done
 ```
@@ -136,7 +137,7 @@ done
 > **Codex — macOS / Linux** (same, into `~/.agents/skills`)
 ```bash
 mkdir -p ~/.agents/skills
-for s in obsidian-setup obsidian-audit obsidian-recall obsidian-format-update obsidian-migrate-projects; do
+for s in obsidian-setup obsidian-audit obsidian-recall obsidian-format-update obsidian-migrate-projects obsidian-maintenance; do
   cp -r "<VAULT-ROOT>/Templates/skills/$s" ~/.agents/skills/
 done
 ```
@@ -145,7 +146,7 @@ done
 ```powershell
 $dst = "$HOME\.claude\skills"
 New-Item -ItemType Directory -Force $dst | Out-Null
-'obsidian-setup','obsidian-audit','obsidian-recall','obsidian-format-update','obsidian-migrate-projects' |
+'obsidian-setup','obsidian-audit','obsidian-recall','obsidian-format-update','obsidian-migrate-projects','obsidian-maintenance' |
   ForEach-Object { Copy-Item -Recurse -Force "<VAULT-ROOT>\Templates\skills\$_" $dst }
 ```
 
@@ -488,3 +489,4 @@ Then report back to the user: each note created (path + one-line hook), hub fiel
 - **Never** edit `graphify-auto/` manually — it's overwritten every commit. Annotate only inside `<!-- @user -->…<!-- /@user -->` sentinels.
 - **Adding a new note type / folder to the vault format**: invoke the `obsidian-format-update` skill — it lists every vault doc that must change, the version-bumping protocol, and what NOT to touch.
 - **Bringing existing projects up to date after a format/setup bump**: type **`/obsidian-migrate-projects`** — it scans every project hub, skips those already current, and applies hub-only bumps for MINOR changes vs full note migration for MAJOR changes, updating both `format_version` + `setup_version` in one pass.
+- **Checking whether a project's notes are still true**: type **`/obsidian-maintenance`** in the repo (weekly/monthly) — it re-checks `specs`/`reference`/`knowledge` notes against the current code (graph-first via graphify, source-confirmed) and proposes fixes for anything that has drifted or gone obsolete.
