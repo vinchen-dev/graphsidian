@@ -3,12 +3,17 @@ tags:
   - meta
   - changelog
 tracks: graphify-obsidian-setup
-updated: 2026-08-03
+updated: 2026-09-21
 ---
 
 # graphify-obsidian-setup.md — changelog
 
 Version history for [[graphify-obsidian-setup]]. Registry: [[VERSIONS]].
+
+### 1.10.1 — 2026-09-21
+- **Topic-grouping reference updated for [[FORMAT]] 2.7.0.** The note-grouping guidance now reads `specs/<topic>/`, `decisions/<topic>/`, or `plans/<topic>/`; it previously named only the first two.
+- Bumped `aligns_with_format` 2.6.0 → 2.7.0 (layout references match current FORMAT).
+- Wording only — PATCH. No wiring, folder, or step change; existing setups need nothing re-applied.
 
 ### 1.10.0 — 2026-08-03
 - **Added a sixth bundled skill, `obsidian-maintenance` (`/obsidian-maintenance`).** A per-project, manually-run

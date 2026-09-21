@@ -2,9 +2,9 @@
 tags:
   - meta
   - template
-doc_version: "1.10.0"
-aligns_with_format: "2.6.0"
-updated: 2026-08-03
+doc_version: "1.10.1"
+aligns_with_format: "2.7.0"
+updated: 2026-09-21
 ---
 
 # Agent Runbook: Set up Graphify + Obsidian on a Project
@@ -429,8 +429,8 @@ See also: [[<PROJECT>]]
 ```
 
 Link each new note from the hub under its matching type subsection, with a **high-signal hook** stating what
-the note answers. If one area grows past ~5 related notes, group it under `specs/<topic>/` or
-`decisions/<topic>/` with an index note (FORMAT.md → *Topic Grouping*).
+the note answers. If one area grows past ~5 related notes, group it under `specs/<topic>/`,
+`decisions/<topic>/`, or `plans/<topic>/` with an index note (FORMAT.md → *Topic Grouping*).
 
 ### Confirm before saving
 

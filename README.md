@@ -138,10 +138,11 @@ Six skills are **bundled with this vault** (a seventh, `/graphify`, comes from `
         ├── knowledge/           # gotchas, patterns, API quirks, bug root-causes
         ├── reference/           # endpoints, pricing, doc links
         ├── plans/               # PRDs, implementation plans, roadmaps
+        │   └── <topic>/         # optional: group a multi-phase plan past ~5 notes
         └── investigations/      # issue trails: symptom → root cause → resolution
 ```
 
-Only `specs/` and `decisions/` may nest one `<topic>/` level — it collapses many hub router lines into one index link, keeping recall at ~1 hub read + 1 note read.
+Only `specs/`, `decisions/`, and `plans/` may nest one `<topic>/` level — it collapses many hub router lines into one index link, keeping recall at ~1 hub read + 1 note read.
 
 ## Note Types
 

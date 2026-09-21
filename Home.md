@@ -9,6 +9,10 @@ On-demand knowledge store across projects. Nothing here loads into a Claude sess
 
 See [[README]] for how it works, and [[FORMAT]] for the structure every project follows.
 
+## Projects
+
+- [[Projects/the-assistant/the-assistant|the-assistant]] — local-first Flutter assistant for tasks, payments, schedules, routines, and shopping.
+
 ## Templates
 
 - [[Templates/How to Setup|How to Setup — Graphify + Obsidian]] — step-by-step for a new project (start here).

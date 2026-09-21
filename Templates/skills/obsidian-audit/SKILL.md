@@ -93,7 +93,7 @@ One concept per note. **Pick the type folder by purpose** (see FORMAT.md → Not
 
 If it's a **multi-part feature** (report sections, API endpoints, pipeline stages), follow FORMAT.md's *Documenting a Multi-Part Feature* pattern under `specs/<topic>/`: numbered index + one atomic note per part + shared cross-cutting notes — don't write one big note. Decisions never go in a spec folder — put them in `decisions/` and link.
 
-The same grouping applies to **many related ADRs**: once one theme in `decisions/` passes ~5 notes, group them under `decisions/<topic>/` with a `<topic>-00-index.md` (FORMAT.md → *Topic Grouping*), so the hub carries one router line instead of many. `specs/` and `decisions/` are the only folders that may nest — `knowledge/`, `reference/`, `plans/`, `investigations/` stay flat.
+The same grouping applies to **many related ADRs** and to **many related plans**: once one theme in `decisions/` or `plans/` passes ~5 notes, group them under `decisions/<topic>/` or `plans/<topic>/` with a `<topic>-00-index.md` (FORMAT.md → *Topic Grouping*), so the hub carries one router line instead of many. `specs/`, `decisions/`, and `plans/` are the only folders that may nest — `knowledge/`, `reference/`, `investigations/` stay flat.
 
 Write `Projects/<project>/<folder>/<slug>.md` (slug = 2–4 kebab words):
 ```markdown
@@ -201,5 +201,5 @@ After saving, tell the user: each note created/updated (path + one-line hook), a
 | Decision note | `<vault>/Projects/<project>/decisions/<slug>.md` |
 | Knowledge note | `<vault>/Projects/<project>/knowledge/<slug>.md` |
 | Reference note | `<vault>/Projects/<project>/reference/<slug>.md` |
-| Plan note          | `<vault>/Projects/<project>/plans/<slug>.md` |
+| Plan note          | `<vault>/Projects/<project>/plans/<slug>.md` (multi-part: `plans/<topic>/`) |
 | Investigation note | `<vault>/Projects/<project>/investigations/<slug>.md` |

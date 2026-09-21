@@ -3,13 +3,24 @@ tags:
   - meta
   - changelog
 tracks: FORMAT
-updated: 2026-08-02
+updated: 2026-09-21
 ---
 
 # FORMAT.md — changelog
 
 Version history and per-version migration checklists for [[FORMAT]]. Registry: [[VERSIONS]].
 [[FORMAT]]'s *Migrating* section points here.
+
+### 2.7.0 — 2026-09-21
+- **Topic grouping extended to `plans/`.** `plans/<topic>/` (index + atomic parts, same pattern as `specs/<topic>/` and `decisions/<topic>/`) is now allowed when one theme grows past ~5 related notes. Previously only `specs/` and `decisions/` could nest, so a project accumulating a multi-phase roadmap had to route every phase as its own hub line — the same hub-budget pressure 2.6.0 resolved for ADRs, recurring for plans.
+- `/obsidian-audit`'s grouping rule and File Path Reference table updated to match, in both skill copies (`~/.claude/skills/` and `Templates/skills/`).
+- `knowledge/`, `reference/`, `investigations/` remain flat — unchanged.
+- Additive — MINOR. No existing note becomes invalid.
+
+**Migration (2.7.0):**
+- [ ] Nothing mandatory. Flat `plans/` notes stay valid indefinitely.
+- [ ] **Only if a hub is over its word budget:** regroup that project's largest `plans/` theme into `plans/<topic>/` — move the notes, write a `<topic>-00-index.md` (the phase list/order plus any intro prose lifted out of the hub), and replace the flat hub lines with one index line. Keep each plan's `status:`/`completed:` frontmatter and its `(done)` hub marker intact; re-point inbound `[[wikilinks]]` if any break.
+- [ ] Bump `format_version` to `"2.7.0"` on hubs/notes when convenient (`/obsidian-migrate-projects` handles this).
 
 ### 2.6.0 — 2026-08-02
 - **Topic grouping extended to `decisions/`.** `decisions/<topic>/` (index + atomic parts, same pattern as `specs/<topic>/`) is now allowed when one theme grows past ~5 related notes. Previously only `specs/` could nest, so an ADR-heavy project had to route every ADR as its own hub line — `hike-ph` carried 14 flat `infra-*` lines plus an introductory prose paragraph, putting its hub at 620 words against a ~400 baseline. Grouping collapses that to one `[[<topic>-00-index]]` router line, and the introductory prose moves into the index note where content belongs.

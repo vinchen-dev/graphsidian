@@ -1,11 +1,11 @@
 ---
 tags:
   - meta
-format_version: "2.6.0"
-updated: 2026-08-02
+format_version: "2.7.0"
+updated: 2026-09-21
 ---
 
-# Project Format — v2.6.0
+# Project Format — v2.7.0
 
 The **single source of truth** for how every project is structured in this vault. The `/obsidian-audit` skill follows this file. Change the format here, bump the version, log it in the [Changelog](#changelog), then migrate existing projects (see [Migrating](#migrating)).
 
@@ -80,7 +80,7 @@ The note's primary tag matches its folder's domain. When a note could fit two fo
 
 ## Topic Grouping (multi-part features)
 
-When one area of `specs/` or `decisions/` grows past ~5 related notes, group them in a topic subfolder named for the feature or theme (e.g. `specs/audit-report/`, `decisions/infra/`). These are the **only** two places a second level of nesting is allowed: `specs/<topic>/` and `decisions/<topic>/`. Don't nest topics inside topics, and don't sub-folder `knowledge/`, `reference/`, `plans/`, or `investigations/` — those stay flat.
+When one area of `specs/`, `decisions/`, or `plans/` grows past ~5 related notes, group them in a topic subfolder named for the feature or theme (e.g. `specs/audit-report/`, `decisions/infra/`, `plans/rollout/`). These are the **only** three places a second level of nesting is allowed: `specs/<topic>/`, `decisions/<topic>/`, and `plans/<topic>/`. Don't nest topics inside topics, and don't sub-folder `knowledge/`, `reference/`, or `investigations/` — those stay flat.
 
 Grouping exists to protect the hub: a topic subfolder collapses many router lines into **one** (`[[<topic>-00-index]] — <hook>`), so the hub stays a lean router as a project accumulates notes. Whatever prose you were tempted to add to the hub to introduce the group belongs in the index note instead.
 
@@ -247,7 +247,7 @@ See also: [[<project>]]
 ## Rules
 
 - **Atomic.** One concept per note. If a note grows two topics, split it. *Exception: investigation notes are intentionally multi-section (see [Investigation Notes](#investigation-notes)) — do not split them.*
-- **Type-foldered.** Every note lives in the type folder matching its purpose (`specs/` `decisions/` `knowledge/` `reference/` `plans/` `investigations/`). Decisions never live inside a spec folder — link them instead. Only `specs/` and `decisions/` may nest one level (`<topic>/`); `knowledge/`, `reference/`, `plans/`, and `investigations/` stay flat.
+- **Type-foldered.** Every note lives in the type folder matching its purpose (`specs/` `decisions/` `knowledge/` `reference/` `plans/` `investigations/`). Decisions never live inside a spec folder — link them instead. Only `specs/`, `decisions/`, and `plans/` may nest one level (`<topic>/`); `knowledge/`, `reference/`, and `investigations/` stay flat.
 - **Hub is a router, kept lean (≤ ~400 words; large projects scale).** Baseline budget: ~400 words for a typical project. A project that routes many multi-part topics may add ~1 hub line per additional routed `…-00-index` (or topic subsection) beyond the baseline — more notes justify more *router lines*, never more content. The hard rule is size-independent: the hub holds hooks, never content. If a hub exceeds its budget, the excess belongs in a note (or a new `…-00-index`), not the hub.
 - **High-signal hooks.** Every hub entry's hook states what the note *answers* (`[[note]] — <the question/fact it resolves>`), specific enough that an agent picks the right note without opening others. Vague hooks ("misc notes") defeat cheap recall.
 - **Always linked.** Every note has a `See also: [[<project>]]` line and is listed under the matching hub subsection. No orphan notes.
@@ -276,6 +276,10 @@ When this file's version changes:
 4. A project is fully migrated when its hub and all notes match the current version.
 
 ## Changelog
+
+### 2.7.0 — 2026-09-21
+- **Topic grouping extended to `plans/`.** A `plans/<topic>/` subfolder (index + atomic parts, same pattern as `specs/<topic>/` and `decisions/<topic>/`) is now allowed when one theme grows past ~5 related notes — e.g. a multi-phase roadmap whose phases each warrant their own plan note. Previously only `specs/` and `decisions/` could nest, so a plan-heavy project pushed its hub over the word budget with one flat router line per plan — the same pressure 2.6.0 relieved for ADRs. `knowledge/`, `reference/`, `investigations/` remain flat.
+- Additive — MINOR. Existing flat `plans/` notes stay valid; regroup a project only when its hub is over budget.
 
 ### 2.6.0 — 2026-08-02
 - **Topic grouping extended to `decisions/`.** A `decisions/<topic>/` subfolder (index + atomic parts, same pattern as `specs/<topic>/`) is now allowed when one theme grows past ~5 related notes — e.g. 14 infra ADRs collapsing to a single `[[infra-00-index]]` hub line. Previously only `specs/` could nest, so ADR-heavy projects pushed the hub over its word budget with flat router lines plus introductory prose. `knowledge/`, `reference/`, `plans/`, `investigations/` remain flat.
