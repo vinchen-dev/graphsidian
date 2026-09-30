@@ -3,8 +3,8 @@ tags:
   - meta
   - howto
 format_version: "2.2.0"
-mirrors_setup: "1.10.1"     # human mirror of graphify-obsidian-setup.md (this doc has no independent version; keep in step)
-updated: 2026-09-21
+mirrors_setup: "1.11.0"     # human mirror of graphify-obsidian-setup.md (this doc has no independent version; keep in step)
+updated: 2026-09-30
 ---
 
 # How to Setup — Graphify + Obsidian on a New Project

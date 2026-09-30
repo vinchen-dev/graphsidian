@@ -3,12 +3,23 @@ tags:
   - meta
   - changelog
 tracks: graphify-obsidian-setup
-updated: 2026-09-21
+updated: 2026-09-30
 ---
 
 # graphify-obsidian-setup.md — changelog
 
 Version history for [[graphify-obsidian-setup]]. Registry: [[VERSIONS]].
+
+### 1.11.0 — 2026-09-30
+- **Step 4 scaffolds a seventh type folder, `preferences/`** ([[FORMAT]] 2.8.0) — added to both the bash `mkdir -p` brace list and the PowerShell array. Step 9's expected-folder listing updated to match.
+- **Step 8 skips `preferences/`** in the initial codebase scan: a convention is a rule the human sets — a pattern visible in code isn't one — and conventions already in the repo's `CLAUDE.md`/`AGENTS.md` are loaded from there, not mirrored.
+- Hub creation still reads the Project Hub template from [[FORMAT]], so new hubs pick up the `### Preferences` subsection (with its `_None yet._` placeholder) from there.
+- Bumped `aligns_with_format` 2.7.0 → 2.8.0.
+- Additive — MINOR. Hooks, export, and ignore files are unaffected; no re-wiring.
+
+**Migration (1.11.0):**
+- [ ] Create `<VAULT>/preferences/` on already-wired projects — the same step as [[FORMAT]] 2.8.0's migration; do it once.
+- [ ] Bump hub `setup_version` to `"1.11.0"` when convenient — no wiring changes needed.
 
 ### 1.10.1 — 2026-09-21
 - **Topic-grouping reference updated for [[FORMAT]] 2.7.0.** The note-grouping guidance now reads `specs/<topic>/`, `decisions/<topic>/`, or `plans/<topic>/`; it previously named only the first two.

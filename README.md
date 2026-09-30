@@ -139,7 +139,8 @@ Six skills are **bundled with this vault** (a seventh, `/graphify`, comes from `
         ├── reference/           # endpoints, pricing, doc links
         ├── plans/               # PRDs, implementation plans, roadmaps
         │   └── <topic>/         # optional: group a multi-phase plan past ~5 notes
-        └── investigations/      # issue trails: symptom → root cause → resolution
+        ├── investigations/      # issue trails: symptom → root cause → resolution
+        └── preferences/         # repo conventions: naming, where new files go
 ```
 
 Only `specs/`, `decisions/`, and `plans/` may nest one `<topic>/` level — it collapses many hub router lines into one index link, keeping recall at ~1 hub read + 1 note read.
@@ -154,6 +155,7 @@ Only `specs/`, `decisions/`, and `plans/` may nest one `<topic>/` level — it c
 | `reference/` | Endpoints, credentials, pricing, links |
 | `plans/` | PRDs, implementation plans, feature plans, roadmaps (`active` → `done`) |
 | `investigations/` | Symptom → root cause → resolution trails |
+| `preferences/` | Repo working conventions — file/folder naming, where new files go, directory rules |
 
 ## How Recall Works
 

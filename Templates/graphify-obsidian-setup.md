@@ -2,9 +2,9 @@
 tags:
   - meta
   - template
-doc_version: "1.10.1"
-aligns_with_format: "2.7.0"
-updated: 2026-09-21
+doc_version: "1.11.0"
+aligns_with_format: "2.8.0"
+updated: 2026-09-30
 ---
 
 # Agent Runbook: Set up Graphify + Obsidian on a Project
@@ -236,12 +236,12 @@ Without it, big UI bundles, build output, and downloaded assets dilute community
 
 > **macOS / Linux (bash)**
 ```bash
-mkdir -p <VAULT>/{specs,decisions,knowledge,reference,plans,investigations}
+mkdir -p <VAULT>/{specs,decisions,knowledge,reference,plans,investigations,preferences}
 ```
 
 > **Windows (PowerShell)** — brace-expansion isn't supported; loop instead:
 ```powershell
-'specs','decisions','knowledge','reference','plans','investigations' | ForEach-Object {
+'specs','decisions','knowledge','reference','plans','investigations','preferences' | ForEach-Object {
   New-Item -ItemType Directory -Force "<VAULT>\$_" | Out-Null
 }
 ```
@@ -393,7 +393,9 @@ Use `graphify query "<question>"` to locate files quickly — the graph is alrea
 | Hub `## Key Paths` table | Entry point, key services, key models — with their real file paths. |
 
 **Cannot derive from code — skip entirely:** `decisions/` (the "why" behind a choice isn't in code — ask the
-human later), `plans/` (future intent — only the human knows), `graphify-auto/` (machine-generated).
+human later), `plans/` (future intent — only the human knows), `preferences/` (a convention is a rule the
+human sets — a pattern visible in code isn't one — and conventions already in the repo's `CLAUDE.md`/`AGENTS.md`
+are loaded from there, not mirrored), `graphify-auto/` (machine-generated).
 
 ### Anti-hallucination rules (hard)
 
@@ -445,7 +447,7 @@ Before writing any file, present the full proposed list to the user:
 
 > **macOS / Linux**
 ```bash
-ls <VAULT>/                              # specs decisions knowledge reference plans investigations graphify-auto
+ls <VAULT>/                              # specs decisions knowledge reference plans investigations preferences graphify-auto
 ls <VAULT>/graphify-auto/ | head -3      # one .md per code entity
 cat <REPO>/.graphifyignore               # corpus tuning present
 if grep -q 'Knowledge Graph' ~/.claude/CLAUDE.md 2>/dev/null || grep -q 'Knowledge Graph' ~/.codex/AGENTS.md 2>/dev/null; then echo "global graph-first directive present ✓"; fi

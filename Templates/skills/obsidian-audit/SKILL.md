@@ -46,12 +46,14 @@ If a candidate note fails any one of these, skip it.
 - How a feature/system behaves as built, when that behavior is surprising or non-obvious → `specs/`
 - A finalized PRD, plan, or roadmap — what was decided and how → `plans/`
 - An issue investigated this session — symptom, ruled-out hypotheses, root cause, resolution (or current state if open) → `investigations/`
+- A repo working convention the user stated or confirmed this session — file/folder naming, where new files of a given kind go, directory-structure rules — or one the repo enforces (test, lint rule, CI check) → `preferences/`
 
 **Skip:**
 - Anything not explicitly stated in this session — no filling gaps, no reasonable assumptions, no "probably" or "likely"
 - Obvious facts any developer would infer from reading the code
 - In-progress / half-finished state — but a finalized PRD, plan, or roadmap document is *not* "half-finished"; it belongs in `plans/` (exception: an unresolved investigation is savable as `status: open`)
-- Anything already in the repo's CLAUDE.md or git history
+- Anything already in the repo's CLAUDE.md or git history — including conventions already written in the repo's `CLAUDE.md`/`AGENTS.md`; don't mirror them into `preferences/`
+- A naming or placement pattern merely observed in the code, never stated or confirmed by the user — a pattern is not a mandate
 - Mechanical steps documented elsewhere
 - Ephemeral conversation detail (debugging attempts, intermediate outputs, throwaway commands)
 - Code structure graphify already captures (function signatures, call graphs, imports, route handlers) — query `graphify-out/graph.json` instead
@@ -90,16 +92,17 @@ One concept per note. **Pick the type folder by purpose** (see FORMAT.md → Not
 | `reference/` | external lookup facts (endpoints, creds, pricing, links) | `reference` |
 | `plans/` | PRDs, implementation plans, feature plans, roadmaps | `plan` |
 | `investigations/` | Issue investigations | `investigation` |
+| `preferences/` | repo working conventions: file/folder naming, where new files go, directory rules | `preference` |
 
 If it's a **multi-part feature** (report sections, API endpoints, pipeline stages), follow FORMAT.md's *Documenting a Multi-Part Feature* pattern under `specs/<topic>/`: numbered index + one atomic note per part + shared cross-cutting notes — don't write one big note. Decisions never go in a spec folder — put them in `decisions/` and link.
 
-The same grouping applies to **many related ADRs** and to **many related plans**: once one theme in `decisions/` or `plans/` passes ~5 notes, group them under `decisions/<topic>/` or `plans/<topic>/` with a `<topic>-00-index.md` (FORMAT.md → *Topic Grouping*), so the hub carries one router line instead of many. `specs/`, `decisions/`, and `plans/` are the only folders that may nest — `knowledge/`, `reference/`, `investigations/` stay flat.
+The same grouping applies to **many related ADRs** and to **many related plans**: once one theme in `decisions/` or `plans/` passes ~5 notes, group them under `decisions/<topic>/` or `plans/<topic>/` with a `<topic>-00-index.md` (FORMAT.md → *Topic Grouping*), so the hub carries one router line instead of many. `specs/`, `decisions/`, and `plans/` are the only folders that may nest — `knowledge/`, `reference/`, `investigations/`, `preferences/` stay flat.
 
 Write `Projects/<project>/<folder>/<slug>.md` (slug = 2–4 kebab words):
 ```markdown
 ---
 tags:
-  - <tag>         # spec | decision | gotcha | pattern | api-quirk | bug | reference | plan | investigation
+  - <tag>         # spec | decision | gotcha | pattern | api-quirk | bug | reference | plan | investigation | preference
 project: <project>
 date: <YYYY-MM-DD>
 format_version: "<current FORMAT.md version, from VERSIONS.md>"
@@ -163,8 +166,41 @@ Rules for investigation notes:
 
 **Marking plans done:** if this session *explicitly* shows a previously captured plan was completed — implemented, shipped, or the user said it's done — propose flipping it: set `status: done` + `completed: <YYYY-MM-DD>` in the plan note, and append `(done)` to its hub entry (keep the entry). Session evidence only: never infer completion, and do not sweep the project's other active plans looking for candidates.
 
+**Preference notes** use this canonical template (FORMAT.md → Preferences Notes):
+```markdown
+---
+tags:
+  - preference
+project: <project>
+date: <YYYY-MM-DD>            # recorded, or last changed
+scope: <repo-relative path the rule governs — e.g. apps/web/lib/ — or / for repo-wide>
+format_version: "<current FORMAT.md version, from VERSIONS.md>"
+---
+
+# <The convention as a rule — e.g. "Tests sit beside the file they test as <name>.test.ts">
+
+See also: [[<project>]]
+
+## Rule
+<The convention, stated imperatively: what to name it, where it goes, how it's laid out. When it maps kinds of file to locations, use a table:>
+
+| Kind | Goes in | Named |
+|------|---------|-------|
+| <kind of file> | `<path>/` | `<pattern>` |
+
+## Exceptions
+<Sanctioned exceptions, each with its reason — or "None.">
+
+## Source
+<Who set it and when (user, YYYY-MM-DD), any enforcement (test / lint rule / CI check path), and `Why: [[decision-slug]]` if a decision explains it.>
+```
+
+Rules for preference notes:
+- Current-state: a changed convention is edited in place (bump `date:`), never kept beside the old rule. A retired convention is removed — propose deleting the note and its hub entry in the confirm step; any history worth keeping goes to `decisions/`.
+- One convention per note — a single rule, or one rule set governing one path. The rationale, if any, lives in a `decisions/` note linked as `Why: [[decision-slug]]`, and that decision gains `See also: [[preference-slug]]`.
+
 ### 4. Link from the hub
-Add each new note under the matching **type subsection** of `## Notes` in `Projects/<project>/<project>.md` (Specs / Decisions / Knowledge / Reference / Plans / Investigations). For a multi-part topic, link only its index note:
+Add each new note under the matching **type subsection** of `## Notes` in `Projects/<project>/<project>.md` (Specs / Decisions / Knowledge / Reference / Plans / Investigations / Preferences). For a multi-part topic, link only its index note:
 ```markdown
 - [[<slug>]] — <one-line hook>
 ```
@@ -173,16 +209,22 @@ Investigations are listed under `### Investigations (\`investigations/\`)` in th
 
 Plans are the inverse: active plans stay unmarked; append `(done)` to a plan's hub entry when it is completed, so the Plans subsection reads as current intent at a glance.
 
+Preferences are listed under `### Preferences (\`preferences/\`)` in the hub. The hook names the placement/naming question the rule settles and the path it governs, so an agent about to add a file can match on the path. No status markers — every listed preference is in force; a retired one loses its entry along with its note. This subsection is kept even when empty, as a single `_None yet._` line — replace that line with the first entry.
+
 Example:
 ```markdown
 ### Investigations (`investigations/`)
 - [[split-not-allowed-error]] — GCash deposit shows "not allowed to split" error (open)
+
+### Preferences (`preferences/`)
+- [[test-file-placement]] — where tests go and how they're named (repo-wide: beside the source, as <name>.test.ts)
 ```
 
 ### 5. Confirm before saving
 Before writing any note, present the full proposed list to the user:
 - Each candidate note: slug, type folder, and one-line summary of what it captures
 - Any plan status flips (active → done), each with the session evidence for completion
+- Any preference notes to remove because their convention was retired, each with the session evidence
 - Anything you're deliberately skipping and why
 
 **Wait for explicit user approval before creating or editing any file.** Do not write speculatively and report after — the user decides what gets saved.
@@ -203,3 +245,4 @@ After saving, tell the user: each note created/updated (path + one-line hook), a
 | Reference note | `<vault>/Projects/<project>/reference/<slug>.md` |
 | Plan note          | `<vault>/Projects/<project>/plans/<slug>.md` (multi-part: `plans/<topic>/`) |
 | Investigation note | `<vault>/Projects/<project>/investigations/<slug>.md` |
+| Preference note    | `<vault>/Projects/<project>/preferences/<slug>.md` |

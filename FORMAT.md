@@ -1,11 +1,11 @@
 ---
 tags:
   - meta
-format_version: "2.7.0"
-updated: 2026-09-21
+format_version: "2.8.0"
+updated: 2026-09-30
 ---
 
-# Project Format — v2.7.0
+# Project Format — v2.8.0
 
 The **single source of truth** for how every project is structured in this vault. The `/obsidian-audit` skill follows this file. Change the format here, bump the version, log it in the [Changelog](#changelog), then migrate existing projects (see [Migrating](#migrating)).
 
@@ -19,6 +19,8 @@ The whole layout exists to let an agent recall knowledge **without exploring** �
 2. **Read only the hub.** Its `## Notes` is a router: every note listed as `[[note]] — hook`, grouped by type. The hook says what each note answers — enough to choose without opening anything else.
 3. **Open exactly one note** whose hook matches the task. For a multi-part topic, open its `…-00-index` (a sub-router), then the one part you need.
 4. **Never** read a folder wholesale, never read `_Index_of_*` files (auto-generated noise), never grep the vault when the hub answers it.
+
+**Before placing files:** when about to create, name, or move files in the project's repo, the note to open is under the hub's `### Preferences` — scan those hooks first (see [Preferences Notes](#preferences-notes)).
 
 This costs ~1 hub + 1 note per recall regardless of how big the project gets. The rules below (lean hub, high-signal hooks, atomic notes) are what keep that true.
 
@@ -45,13 +47,15 @@ Projects/<project>/
     <slug>.md
   investigations/       # issue investigations: symptom → ruled-out → root cause → resolution
     <slug>.md
+  preferences/          # repo working conventions: naming, where new files go, directory rules
+    <slug>.md
   graphify-auto/        # machine-generated graph nodes (one .md per code entity)
                         # rebuilt automatically by post-commit hook — never edit manually
 ```
 
 One project = one folder. Inside it, notes are separated by **type folder** (below).
 
-**The six standard type folders are scaffolded at setup** (see [[graphify-obsidian-setup]] → Step 4) — an empty one is expected on a new project and is not a defect. The "create it only when it has a note" rule applies to **optional nesting**: don't pre-create `specs/<topic>/` or `decisions/<topic>/` subfolders before they have notes. Tiny projects may keep a few notes flat beside the hub until a type accumulates enough to warrant its folder.
+**The seven standard type folders are scaffolded at setup** (see [[graphify-obsidian-setup]] → Step 4) — an empty one is expected on a new project and is not a defect. The "create it only when it has a note" rule applies to **optional nesting**: don't pre-create `specs/<topic>/` or `decisions/<topic>/` subfolders before they have notes. Tiny projects may keep a few notes flat beside the hub until a type accumulates enough to warrant its folder.
 
 ## Note Types & Folders
 
@@ -65,6 +69,7 @@ Every atomic note belongs to exactly one type folder, chosen by **purpose**:
 | `reference/` | External facts you look up, not derive | `reference` | "What's the URL / key / price?" |
 | `plans/` | Implementation plans, feature plans, roadmaps — what we're building and how we'll build it | `plan` | "What's the plan for X / what are we building?" |
 | `investigations/` | Issue investigations — symptom, hypotheses ruled out, root cause, resolution | `investigation` | "Have we seen this issue before / how was it fixed?" |
+| `preferences/` | Repo working conventions an agent must follow — file/folder naming, where new files of a given kind go, directory-structure rules (not product decisions, specs, or knowledge) | `preference` | "How should this be organized / named / where does X go?" |
 
 The note's primary tag matches its folder's domain. When a note could fit two folders, pick by the **question it answers** (the "Ask" column).
 
@@ -80,7 +85,7 @@ The note's primary tag matches its folder's domain. When a note could fit two fo
 
 ## Topic Grouping (multi-part features)
 
-When one area of `specs/`, `decisions/`, or `plans/` grows past ~5 related notes, group them in a topic subfolder named for the feature or theme (e.g. `specs/audit-report/`, `decisions/infra/`, `plans/rollout/`). These are the **only** three places a second level of nesting is allowed: `specs/<topic>/`, `decisions/<topic>/`, and `plans/<topic>/`. Don't nest topics inside topics, and don't sub-folder `knowledge/`, `reference/`, or `investigations/` — those stay flat.
+When one area of `specs/`, `decisions/`, or `plans/` grows past ~5 related notes, group them in a topic subfolder named for the feature or theme (e.g. `specs/audit-report/`, `decisions/infra/`, `plans/rollout/`). These are the **only** three places a second level of nesting is allowed: `specs/<topic>/`, `decisions/<topic>/`, and `plans/<topic>/`. Don't nest topics inside topics, and don't sub-folder `knowledge/`, `reference/`, `investigations/`, or `preferences/` — those stay flat.
 
 Grouping exists to protect the hub: a topic subfolder collapses many router lines into **one** (`[[<topic>-00-index]] — <hook>`), so the hub stays a lean router as a project accumulates notes. Whatever prose you were tempted to add to the hub to introduce the group belongs in the index note instead.
 
@@ -167,6 +172,56 @@ Set `status: active` when the plan is written and `status: done` (plus `complete
 
 **Who flips it:** `/obsidian-audit` proposes the flip (in its confirm-before-saving step) when a session *explicitly* shows a captured plan was completed — implemented, shipped, or stated by the user. Completion is never inferred.
 
+## Preferences Notes
+
+Preference notes record **how to work in the project's repo**: file and folder naming, where a new file of a given kind goes, directory-structure rules, and other repo-level working conventions an agent must follow. They answer "How should this be organized / named / where does X go?" — and nothing else. Product decisions stay in `decisions/`, as-built behavior in `specs/`, lessons in `knowledge/`. When a convention has a rationale worth keeping, the *why* is a decision note; the preference note holds only the operative rule and links to it.
+
+**Current-state, not history.** A preference note always states the convention as it stands today. When a convention changes, edit the note in place and bump its `date:` — never keep the old rule beside the new one. When a convention is retired, delete the note and its hub entry: a stale rule actively misplaces files, unlike a resolved investigation or a done plan, which stay useful as history. If the change itself is worth remembering ("why we moved X"), record it in `decisions/`.
+
+**Stated, not observed.** Record a convention only when the user stated or confirmed it, or the repo enforces it (a test, lint rule, or CI check). A pattern that merely shows up in the code is not a mandate — it may be an accident.
+
+**Don't mirror the repo's own instructions.** A convention already written in the repo's `CLAUDE.md` / `AGENTS.md` (root or per-app) is loaded from there — don't copy it into `preferences/` (see *Capture, don't duplicate* in [Rules](#rules)). `preferences/` holds the conventions that otherwise live only in the user's head or in session history.
+
+**Hub hooks** name the placement/naming question the rule settles and the path it governs — e.g. `[[test-file-placement]] — where tests go and how they're named (repo-wide: beside the source, as <name>.test.ts)` — so an agent about to add a file can match on the path. No status markers: every listed preference is in force.
+
+**Empty subsection kept.** Unlike other types, keep `### Preferences` in the hub even while `preferences/` is empty, with a single `_None yet._` line. Agents check it before file-placing work; an explicit empty entry tells them the vault records no conventions beyond the repo's own instruction files, instead of leaving them to wonder whether the subsection was forgotten. Replace the placeholder with the first entry.
+
+**Atomic and flat.** One convention per note — a single rule, or one rule set governing one path (e.g. a folder's by-kind layout as one table). `preferences/` never nests.
+
+**Cross-link rule:** a preference established by a decision links to it (`Why: [[decision-slug]]` in its Source section) and the decision gains `See also: [[preference-slug]]`. Likewise for a `knowledge/` gotcha that motivated the rule.
+
+**Recall rule:** before creating, naming, or moving files in the project's repo, go to the hub, scan `### Preferences` hooks for the path or kind of file involved, and open the matched note before choosing a location or name yourself.
+
+### Canonical preference note template
+
+```markdown
+---
+tags:
+  - preference
+project: <project>
+date: <YYYY-MM-DD>            # recorded, or last changed
+scope: <repo-relative path the rule governs — e.g. apps/web/lib/ — or / for repo-wide>
+format_version: "<current, from VERSIONS.md>"
+---
+
+# <The convention as a rule — e.g. "Tests sit beside the file they test as <name>.test.ts">
+
+See also: [[<project>]]
+
+## Rule
+<The convention, stated imperatively: what to name it, where it goes, how it's laid out. When it maps kinds of file to locations, use a table:>
+
+| Kind | Goes in | Named |
+|------|---------|-------|
+| <kind of file> | `<path>/` | `<pattern>` |
+
+## Exceptions
+<Sanctioned exceptions, each with its reason — or "None.">
+
+## Source
+<Who set it and when (user, YYYY-MM-DD), any enforcement (test / lint rule / CI check path), and `Why: [[decision-slug]]` if a decision explains it.>
+```
+
 ## Project Hub — `<project>/<project>.md`
 
 ```markdown
@@ -207,6 +262,9 @@ setup_version: "<current graphify-obsidian-setup.md version, from VERSIONS.md>" 
 ### Investigations (`investigations/`)
 - [[<slug>]] — <hook>
 
+### Preferences (`preferences/`)
+- [[<slug>]] — <hook>
+
 ### Not covered yet
 - [[<slug>]] — <deliberately deferred domains, listed so an agent knows their absence is intentional, not an oversight>
 
@@ -222,14 +280,14 @@ Auto-generated code graph. Query via `graphify query "<question>"` rather than r
 | `<path>` | <purpose> |
 ```
 
-Omit a Notes subsection that has no notes yet. `### Not covered yet` is **optional**: include it only when the project deliberately defers documenting known domains (it routes to a note listing them — the list itself is content and lives in the note, not the hub).
+Omit a Notes subsection that has no notes yet — except `### Preferences`, which stays with a `_None yet._` line (see [Preferences Notes](#preferences-notes)). `### Not covered yet` is **optional**: include it only when the project deliberately defers documenting known domains (it routes to a note listing them — the list itself is content and lives in the note, not the hub).
 
 ## Atomic Note — `<type-folder>/<slug>.md`
 
 ```markdown
 ---
 tags:
-  - <tag>                 # spec | decision | gotcha | pattern | api-quirk | bug | reference | plan | investigation
+  - <tag>                 # spec | decision | gotcha | pattern | api-quirk | bug | reference | plan | investigation | preference
 project: <project>
 date: <YYYY-MM-DD>
 format_version: "<current, from VERSIONS.md>"   # the FORMAT version this note follows
@@ -247,7 +305,7 @@ See also: [[<project>]]
 ## Rules
 
 - **Atomic.** One concept per note. If a note grows two topics, split it. *Exception: investigation notes are intentionally multi-section (see [Investigation Notes](#investigation-notes)) — do not split them.*
-- **Type-foldered.** Every note lives in the type folder matching its purpose (`specs/` `decisions/` `knowledge/` `reference/` `plans/` `investigations/`). Decisions never live inside a spec folder — link them instead. Only `specs/`, `decisions/`, and `plans/` may nest one level (`<topic>/`); `knowledge/`, `reference/`, and `investigations/` stay flat.
+- **Type-foldered.** Every note lives in the type folder matching its purpose (`specs/` `decisions/` `knowledge/` `reference/` `plans/` `investigations/` `preferences/`). Decisions never live inside a spec folder — link them instead. Only `specs/`, `decisions/`, and `plans/` may nest one level (`<topic>/`); `knowledge/`, `reference/`, `investigations/`, and `preferences/` stay flat.
 - **Hub is a router, kept lean (≤ ~400 words; large projects scale).** Baseline budget: ~400 words for a typical project. A project that routes many multi-part topics may add ~1 hub line per additional routed `…-00-index` (or topic subsection) beyond the baseline — more notes justify more *router lines*, never more content. The hard rule is size-independent: the hub holds hooks, never content. If a hub exceeds its budget, the excess belongs in a note (or a new `…-00-index`), not the hub.
 - **High-signal hooks.** Every hub entry's hook states what the note *answers* (`[[note]] — <the question/fact it resolves>`), specific enough that an agent picks the right note without opening others. Vague hooks ("misc notes") defeat cheap recall.
 - **Always linked.** Every note has a `See also: [[<project>]]` line and is listed under the matching hub subsection. No orphan notes.
@@ -276,6 +334,12 @@ When this file's version changes:
 4. A project is fully migrated when its hub and all notes match the current version.
 
 ## Changelog
+
+### 2.8.0 — 2026-09-30
+- Added **`preferences/` human type folder** (tag: `preference`): repo working conventions an agent must follow — file/folder naming, where new files of a given kind go, directory-structure rules. Answers "How should this be organized / named / where does X go?"; distinct from `decisions/` (why), `specs/` (as-built behavior), and `knowledge/` (lessons). Current-state notes — edited in place, deleted when retired. Conventions already in the repo's `CLAUDE.md`/`AGENTS.md` are not mirrored. New `scope:` frontmatter field names the path a rule governs.
+- Added the **Preferences Notes** section and the `### Preferences` hub subsection — kept with a `_None yet._` line while empty, the one exception to omitting empty subsections. AI Agent Access gained a *before placing files* recall pointer to it.
+- `preferences/` stays flat. Seven standard type folders are now scaffolded at setup ([[graphify-obsidian-setup]] 1.11.0).
+- Additive — MINOR. No existing note becomes invalid.
 
 ### 2.7.0 — 2026-09-21
 - **Topic grouping extended to `plans/`.** A `plans/<topic>/` subfolder (index + atomic parts, same pattern as `specs/<topic>/` and `decisions/<topic>/`) is now allowed when one theme grows past ~5 related notes — e.g. a multi-phase roadmap whose phases each warrant their own plan note. Previously only `specs/` and `decisions/` could nest, so a plan-heavy project pushed its hub over the word budget with one flat router line per plan — the same pressure 2.6.0 relieved for ADRs. `knowledge/`, `reference/`, `investigations/` remain flat.

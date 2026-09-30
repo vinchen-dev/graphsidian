@@ -3,13 +3,27 @@ tags:
   - meta
   - changelog
 tracks: FORMAT
-updated: 2026-09-21
+updated: 2026-09-30
 ---
 
 # FORMAT.md — changelog
 
 Version history and per-version migration checklists for [[FORMAT]]. Registry: [[VERSIONS]].
 [[FORMAT]]'s *Migrating* section points here.
+
+### 2.8.0 — 2026-09-30
+- Added **`preferences/` human type folder** (tag: `preference`): repo working conventions an agent must follow when working in the project's repo — file/folder naming, where new files of a given kind go, directory-structure rules. Answers "How should this be organized / named / where does X go?". Not product decisions (`decisions/`), as-built behavior (`specs/`), or lessons (`knowledge/`); a convention's *why*, if worth keeping, stays a decision note that the preference links to.
+- **Current-state semantics:** a preference note states the rule as it stands today — edited in place when the convention changes, deleted (with its hub entry) when retired. This is the opposite of `investigations/` and `plans/`, which keep history, because a stale convention actively misplaces files.
+- **Capture bar:** record a convention only when the user stated or confirmed it, or the repo enforces it; never mirror what the repo's `CLAUDE.md`/`AGENTS.md` already carries. New optional `scope:` frontmatter field names the repo path a rule governs.
+- Added the **Preferences Notes** section (permanence, hub hooks, recall rule, cross-links, canonical template) and a `### Preferences` hub subsection placed after `### Investigations`. It is kept with a `_None yet._` line while empty — the one exception to omitting empty subsections — so an agent checking it before placing files sees an explicit "nothing recorded".
+- `/obsidian-audit` gained the type (save/skip rules, type-table row, embedded template, hub guidance, file-path row) in both skill copies (`~/.claude/skills/` and `Templates/skills/`). The setup runbook scaffolds the folder ([[graphify-obsidian-setup]] 1.11.0).
+- `preferences/` stays flat. Additive — MINOR. No existing note becomes invalid.
+
+**Migration (2.8.0):**
+- [ ] Create `Projects/<project>/preferences/` in every existing project — an empty folder is expected.
+- [ ] Add ``### Preferences (`preferences/`)`` to the hub's `## Notes` after `### Investigations` (before `### Not covered yet` / `### Graph`), holding a single `_None yet._` line until the first note lands.
+- [ ] Nothing to move by default. If an existing `decisions/` or `knowledge/` note is really just an operative naming/placement rule with no rationale worth keeping, it may move to `preferences/` when next touched — keep any *why* in `decisions/` and cross-link. Don't copy conventions the repo's own `CLAUDE.md`/`AGENTS.md` already holds.
+- [ ] Bump `format_version` to `"2.8.0"` on hubs/notes when convenient (`/obsidian-migrate-projects` handles this).
 
 ### 2.7.0 — 2026-09-21
 - **Topic grouping extended to `plans/`.** `plans/<topic>/` (index + atomic parts, same pattern as `specs/<topic>/` and `decisions/<topic>/`) is now allowed when one theme grows past ~5 related notes. Previously only `specs/` and `decisions/` could nest, so a project accumulating a multi-phase roadmap had to route every phase as its own hub line — the same hub-budget pressure 2.6.0 resolved for ADRs, recurring for plans.
